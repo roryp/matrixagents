@@ -1,34 +1,54 @@
 package com.matrixagents.service;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
+
+import com.matrixagents.agents.ConditionalAgents.ExpertChatbot;
+import com.matrixagents.agents.GOAPAgents.GoalPlanner;
+import com.matrixagents.agents.GOAPAgents.HoroscopeGenerator;
+import com.matrixagents.agents.GOAPAgents.PersonExtractor;
+import com.matrixagents.agents.GOAPAgents.SignExtractor;
+import com.matrixagents.agents.GOAPAgents.StoryFinder;
+import com.matrixagents.agents.GOAPAgents.WriterAgent;
+import com.matrixagents.agents.HumanInLoopAgents.HoroscopeAgent;
+import com.matrixagents.agents.HumanInLoopAgents.ZodiacExtractor;
+import com.matrixagents.agents.LoopAgents.StyleScorer;
+import com.matrixagents.agents.P2PAgents.CriticAgent;
+import com.matrixagents.agents.P2PAgents.HypothesisAgent;
+import com.matrixagents.agents.P2PAgents.LiteratureAgent;
+import com.matrixagents.agents.P2PAgents.ScorerAgent;
+import com.matrixagents.agents.P2PAgents.SynthesizerAgent;
+import com.matrixagents.agents.P2PAgents.ValidationAgent;
+import com.matrixagents.agents.ParallelAgents.EveningPlan;
+import com.matrixagents.agents.ParallelAgents.EveningPlannerAgent;
 import com.matrixagents.agents.SequenceAgents;
 import com.matrixagents.agents.SequenceAgents.AudienceEditor;
-import com.matrixagents.agents.ParallelAgents;
-import com.matrixagents.agents.ParallelAgents.*;
-import com.matrixagents.agents.LoopAgents;
-import com.matrixagents.agents.LoopAgents.StyleScorer;
-import com.matrixagents.agents.ConditionalAgents;
-import com.matrixagents.agents.ConditionalAgents.*;
-import com.matrixagents.agents.SupervisorAgents;
-import com.matrixagents.agents.SupervisorAgents.*;
-import com.matrixagents.agents.HumanInLoopAgents;
-import com.matrixagents.agents.HumanInLoopAgents.*;
-import com.matrixagents.agents.GOAPAgents;
-import com.matrixagents.agents.GOAPAgents.*;
-import com.matrixagents.agents.P2PAgents;
-import com.matrixagents.agents.P2PAgents.*;
+import com.matrixagents.agents.SupervisorAgents.BankTool;
+import com.matrixagents.agents.SupervisorAgents.CreditAgent;
+import com.matrixagents.agents.SupervisorAgents.ExchangeAgent;
+import com.matrixagents.agents.SupervisorAgents.ExchangeTool;
+import com.matrixagents.agents.SupervisorAgents.WithdrawAgent;
 import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
+
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
 
 /**
  * Service that executes the 8 LangChain4j agentic patterns.
