@@ -49,6 +49,8 @@ import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
 
 import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.UntypedAgent;
+import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
 import dev.langchain4j.model.chat.ChatModel;
@@ -121,17 +123,16 @@ public class PatternExecutionService {
 
     /**
      * SEQUENCE PATTERN: CreativeWriter -> AudienceEditor -> StyleEditor
-     * Uses AgenticServices.sequenceBuilder() for proper chaining where each agent's 
-     * output feeds into the next via AgenticScope.
+     * Uses AgenticServices.sequenceBuilder() with AgentListener for proper 
+     * chaining where each agent's output feeds into the next via AgenticScope.
      */
     private ExecutionResult executeSequence(String prompt) {
         String executionId = UUID.randomUUID().toString();
         Instant startTime = Instant.now();
         List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
-        Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("sequence", "Starting sequential workflow using AgenticServices: Writer → Audience Editor → Style Editor")));
+            events.add(publishEvent(AgentEvent.started("sequence", "Starting sequential workflow using AgenticServices.sequenceBuilder(): Writer → Audience Editor → Style Editor")));
 
             // Parse input: "topic" or "topic|audience|style"
             String topic = prompt;
@@ -145,46 +146,42 @@ public class PatternExecutionService {
                 if (parts.length > 2) style = parts[2].trim();
             }
 
+            // Create listener for real-time WebSocket events
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "sequence", events);
+
+            // Build agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            SequenceAgents.CreativeWriter writer = AgenticServices.agentBuilder(SequenceAgents.CreativeWriter.class)
+                    .chatModel(chatModel)
+                    .outputKey("story")
+                    .build();
+
+            AudienceEditor audienceEditor = AgenticServices.agentBuilder(AudienceEditor.class)
+                    .chatModel(chatModel)
+                    .outputKey("story")
+                    .build();
+
+            SequenceAgents.StyleEditor styleEditor = AgenticServices.agentBuilder(SequenceAgents.StyleEditor.class)
+                    .chatModel(chatModel)
+                    .outputKey("story")
+                    .build();
+
+            // Build sequence using AgenticServices.sequenceBuilder() with listener
+            UntypedAgent novelCreator = AgenticServices.sequenceBuilder()
+                    .name("novelCreator")
+                    .subAgents(writer, audienceEditor, styleEditor)
+                    .listener(listener)
+                    .outputKey("story")
+                    .build();
+
+            // Execute the sequence - AgenticScope handles state passing automatically
+            ResultWithAgenticScope<String> result = novelCreator.invokeWithAgenticScope(
+                    Map.of("topic", topic, "audience", audience, "style", style));
+
+            String finalStory = String.valueOf(result.result());
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
             scope.put("topic", topic);
             scope.put("audience", audience);
             scope.put("style", style);
-
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "topic", topic)));
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "audience", audience)));
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "style", style)));
-
-            // Build agents using AiServices.builder(Class)
-            SequenceAgents.CreativeWriter writer = AiServices.builder(SequenceAgents.CreativeWriter.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            AudienceEditor audienceEditor = AiServices.builder(AudienceEditor.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            SequenceAgents.StyleEditor styleEditor = AiServices.builder(SequenceAgents.StyleEditor.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            // Step 1: Generate initial story
-            events.add(publishEvent(AgentEvent.agentInvoked("sequence", "creativeWriter", "Generating story about: " + topic)));
-            String story = writer.generateStory(topic);
-            scope.put("story", story);
-            events.add(publishEvent(AgentEvent.agentCompleted("sequence", "creativeWriter", truncate(story))));
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "story", truncate(story))));
-
-            // Step 2: Edit for audience
-            events.add(publishEvent(AgentEvent.agentInvoked("sequence", "audienceEditor", "Adapting for " + audience + " audience")));
-            String audienceEdited = audienceEditor.editForAudience(story, audience);
-            scope.put("story", audienceEdited);
-            events.add(publishEvent(AgentEvent.agentCompleted("sequence", "audienceEditor", truncate(audienceEdited))));
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "story", truncate(audienceEdited))));
-
-            // Step 3: Edit for style
-            events.add(publishEvent(AgentEvent.agentInvoked("sequence", "styleEditor", "Applying " + style + " style")));
-            String finalStory = styleEditor.editForStyle(audienceEdited, style);
-            scope.put("story", finalStory);
-            events.add(publishEvent(AgentEvent.agentCompleted("sequence", "styleEditor", truncate(finalStory))));
 
             events.add(publishEvent(AgentEvent.completed("sequence", finalStory)));
             return ExecutionResult.success(executionId, "sequence", finalStory, events, scope, startTime);
@@ -249,16 +246,16 @@ public class PatternExecutionService {
 
     /**
      * LOOP PATTERN: Generate -> Score -> Refine (repeat until threshold)
-     * Uses AgenticServices.loopBuilder() for iterative refinement with exit conditions.
+     * Uses AgenticServices.loopBuilder() with AgentListener for iterative 
+     * refinement with exit conditions based on AgenticScope state.
      */
     private ExecutionResult executeLoop(String prompt) {
         String executionId = UUID.randomUUID().toString();
         Instant startTime = Instant.now();
         List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
-        Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("loop", "Starting loop workflow using AgenticServices: Generate → Score → Refine (until score ≥ 0.8)")));
+            events.add(publishEvent(AgentEvent.started("loop", "Starting loop workflow using AgenticServices.loopBuilder(): Generate → Score → Refine (until score ≥ 0.8)")));
 
             // Parse input
             String topic = prompt;
@@ -269,68 +266,62 @@ public class PatternExecutionService {
                 if (parts.length > 1) style = parts[1].trim();
             }
 
+            // Create listener for real-time WebSocket events
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "loop", events);
+
+            // Build agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            com.matrixagents.agents.LoopAgents.CreativeWriter generator = AgenticServices
+                    .agentBuilder(com.matrixagents.agents.LoopAgents.CreativeWriter.class)
+                    .chatModel(chatModel)
+                    .outputKey("story")
+                    .build();
+
+            StyleScorer scorer = AgenticServices.agentBuilder(StyleScorer.class)
+                    .chatModel(chatModel)
+                    .outputKey("score")
+                    .build();
+
+            com.matrixagents.agents.LoopAgents.StyleEditor refiner = AgenticServices
+                    .agentBuilder(com.matrixagents.agents.LoopAgents.StyleEditor.class)
+                    .chatModel(chatModel)
+                    .outputKey("story")
+                    .build();
+
+            // Build loop agent for score->refine cycle
+            UntypedAgent styleReviewLoop = AgenticServices.loopBuilder()
+                    .name("styleReviewLoop")
+                    .subAgents(scorer, refiner)
+                    .maxIterations(5)
+                    .exitCondition(scope -> scope.readState("score", 0.0) >= 0.8)
+                    .build();
+
+            // Build sequence: generate first, then loop score->refine
+            UntypedAgent styledWriter = AgenticServices.sequenceBuilder()
+                    .name("styledWriter")
+                    .subAgents(generator, styleReviewLoop)
+                    .listener(listener)
+                    .outputKey("story")
+                    .build();
+
+            // Execute the workflow - AgenticScope handles all state automatically
+            ResultWithAgenticScope<String> result = styledWriter.invokeWithAgenticScope(
+                    Map.of("topic", topic, "style", style));
+
+            String finalStory = String.valueOf(result.result());
+            
+            // Get scope state from listener and AgenticScope
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
             scope.put("topic", topic);
             scope.put("style", style);
-            events.add(publishEvent(AgentEvent.stateUpdated("loop", "topic", topic)));
-            events.add(publishEvent(AgentEvent.stateUpdated("loop", "style", style)));
+            
+            // Read final score from AgenticScope
+            Double finalScore = result.agenticScope().readState("score", 0.0);
+            scope.put("finalScore", finalScore);
+            scope.put("finalStory", finalStory);
 
-            // Build agents using AiServices.builder(Class)
-            com.matrixagents.agents.LoopAgents.CreativeWriter generator = AiServices.builder(com.matrixagents.agents.LoopAgents.CreativeWriter.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            StyleScorer scorer = AiServices.builder(StyleScorer.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            com.matrixagents.agents.LoopAgents.StyleEditor refiner = AiServices.builder(com.matrixagents.agents.LoopAgents.StyleEditor.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            int maxIterations = 5;
-            double targetScore = 0.8;
-            String story = null;
-            double score = 0.0;
-
-            for (int iteration = 1; iteration <= maxIterations && score < targetScore; iteration++) {
-                scope.put("iteration", iteration);
-                events.add(publishEvent(AgentEvent.stateUpdated("loop", "iteration", String.valueOf(iteration))));
-
-                if (story == null) {
-                    // Initial generation using @Agent annotated method
-                    events.add(publishEvent(AgentEvent.agentInvoked("loop", "creativeWriter", "Generating " + style + " story about " + topic)));
-                    story = generator.generateStory(topic);
-                    scope.put("story", story);
-                    events.add(publishEvent(AgentEvent.agentCompleted("loop", "creativeWriter", truncate(story))));
-                    events.add(publishEvent(AgentEvent.stateUpdated("loop", "story", truncate(story))));
-                }
-
-                // Score the story using @Agent annotated scorer
-                events.add(publishEvent(AgentEvent.agentInvoked("loop", "styleScorer", "Evaluating " + style + " style alignment...")));
-                score = scorer.scoreStyle(story, style);
-                scope.put("score", score);
-                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleScorer", String.format("Score: %.2f", score))));
-                events.add(publishEvent(AgentEvent.stateUpdated("loop", "score", String.format("%.2f", score))));
-
-                if (score >= targetScore) {
-                    events.add(publishEvent(AgentEvent.stateUpdated("loop", "status", "Target score reached! ✓")));
-                    break;
-                }
-
-                // Refine the story using @Agent annotated editor
-                events.add(publishEvent(AgentEvent.agentInvoked("loop", "styleEditor", "Refining to better match " + style + " style...")));
-                story = refiner.editStory(story, style);
-                scope.put("story", story);
-                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleEditor", truncate(story))));
-                events.add(publishEvent(AgentEvent.stateUpdated("loop", "story", truncate(story))));
-            }
-
-            scope.put("finalScore", score);
-            scope.put("finalStory", story);
-
-            String result = String.format("**Final Story** (Score: %.2f)\n\n%s", score, story);
-            events.add(publishEvent(AgentEvent.completed("loop", result)));
-            return ExecutionResult.success(executionId, "loop", result, events, scope, startTime);
+            String output = String.format("**Final Story** (Score: %.2f)\n\n%s", finalScore, finalStory);
+            events.add(publishEvent(AgentEvent.completed("loop", output)));
+            return ExecutionResult.success(executionId, "loop", output, events, scope, startTime);
 
         } catch (Exception e) {
             events.add(publishEvent(AgentEvent.error("loop", null, e.getMessage())));
@@ -444,7 +435,8 @@ public class PatternExecutionService {
 
     /**
      * HUMAN-IN-THE-LOOP PATTERN: Agent proposes, human reviews, agent executes
-     * Uses AiServices.builder() for interactive workflows requiring human input.
+     * Uses AgenticServices.agentBuilder() for agents with human input integration.
+     * Note: Human-in-the-loop requires manual orchestration for input waiting.
      */
     private ExecutionResult executeHumanInLoop(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -455,8 +447,8 @@ public class PatternExecutionService {
         try {
             events.add(publishEvent(AgentEvent.started("human-in-loop", "Starting human-in-the-loop workflow using AgenticServices")));
 
-            // Build agents using AiServices.builder()
-            ZodiacExtractor extractor = AiServices.builder(ZodiacExtractor.class)
+            // Build agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            ZodiacExtractor extractor = AgenticServices.agentBuilder(ZodiacExtractor.class)
                     .chatModel(chatModel)
                     .build();
             
@@ -489,8 +481,8 @@ public class PatternExecutionService {
             scope.put("zodiacSign", zodiacSign);
             events.add(publishEvent(AgentEvent.stateUpdated("human-in-loop", "zodiacSign", zodiacSign)));
 
-            // Generate horoscope using @Agent annotated agent
-            HoroscopeAgent horoscopeAgent = AiServices.builder(HoroscopeAgent.class)
+            // Generate horoscope using AgenticServices.agentBuilder()
+            HoroscopeAgent horoscopeAgent = AgenticServices.agentBuilder(HoroscopeAgent.class)
                     .chatModel(chatModel)
                     .build();
             
@@ -510,7 +502,8 @@ public class PatternExecutionService {
 
     /**
      * GOAP PATTERN: Goal-Oriented Action Planning
-     * Uses AiServices.builder() for agents that are selected based on available state to achieve a goal.
+     * Uses AgenticServices.agentBuilder() for agents that are selected based on available state to achieve a goal.
+     * Note: GOAP requires manual orchestration for goal-based action selection.
      */
     private ExecutionResult executeGOAP(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -524,28 +517,28 @@ public class PatternExecutionService {
             scope.put("prompt", prompt);
             scope.put("goal", "Create personalized astrology writeup");
 
-            // Build agents using AiServices.builder()
-            GoalPlanner planner = AiServices.builder(GoalPlanner.class)
+            // Build agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            GoalPlanner planner = AgenticServices.agentBuilder(GoalPlanner.class)
                     .chatModel(plannerModel)
                     .build();
 
-            PersonExtractor personExtractor = AiServices.builder(PersonExtractor.class)
+            PersonExtractor personExtractor = AgenticServices.agentBuilder(PersonExtractor.class)
                     .chatModel(chatModel)
                     .build();
 
-            SignExtractor signExtractor = AiServices.builder(SignExtractor.class)
+            SignExtractor signExtractor = AgenticServices.agentBuilder(SignExtractor.class)
                     .chatModel(chatModel)
                     .build();
 
-            HoroscopeGenerator horoscopeGen = AiServices.builder(HoroscopeGenerator.class)
+            HoroscopeGenerator horoscopeGen = AgenticServices.agentBuilder(HoroscopeGenerator.class)
                     .chatModel(chatModel)
                     .build();
 
-            StoryFinder storyFinder = AiServices.builder(StoryFinder.class)
+            StoryFinder storyFinder = AgenticServices.agentBuilder(StoryFinder.class)
                     .chatModel(chatModel)
                     .build();
 
-            WriterAgent writer = AiServices.builder(WriterAgent.class)
+            WriterAgent writer = AgenticServices.agentBuilder(WriterAgent.class)
                     .chatModel(chatModel)
                     .build();
 
@@ -629,7 +622,8 @@ public class PatternExecutionService {
 
     /**
      * P2P PATTERN: Peer-to-Peer agent collaboration
-     * Uses AiServices.builder() for agents that activate when their inputs become available in shared state.
+     * Uses AgenticServices.agentBuilder() for agents that activate when their inputs become available in shared state.
+     * Note: P2P requires manual orchestration for peer activation based on data dependencies.
      */
     private ExecutionResult executeP2P(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -642,28 +636,28 @@ public class PatternExecutionService {
 
             scope.put("topic", prompt);
 
-            // Build peer agents using AiServices.builder()
-            LiteratureAgent literatureAgent = AiServices.builder(LiteratureAgent.class)
+            // Build peer agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            LiteratureAgent literatureAgent = AgenticServices.agentBuilder(LiteratureAgent.class)
                     .chatModel(chatModel)
                     .build();
 
-            HypothesisAgent hypothesisAgent = AiServices.builder(HypothesisAgent.class)
+            HypothesisAgent hypothesisAgent = AgenticServices.agentBuilder(HypothesisAgent.class)
                     .chatModel(chatModel)
                     .build();
 
-            CriticAgent criticAgent = AiServices.builder(CriticAgent.class)
+            CriticAgent criticAgent = AgenticServices.agentBuilder(CriticAgent.class)
                     .chatModel(chatModel)
                     .build();
 
-            ValidationAgent validationAgent = AiServices.builder(ValidationAgent.class)
+            ValidationAgent validationAgent = AgenticServices.agentBuilder(ValidationAgent.class)
                     .chatModel(chatModel)
                     .build();
 
-            ScorerAgent scorerAgent = AiServices.builder(ScorerAgent.class)
+            ScorerAgent scorerAgent = AgenticServices.agentBuilder(ScorerAgent.class)
                     .chatModel(chatModel)
                     .build();
 
-            SynthesizerAgent synthesizer = AiServices.builder(SynthesizerAgent.class)
+            SynthesizerAgent synthesizer = AgenticServices.agentBuilder(SynthesizerAgent.class)
                     .chatModel(chatModel)
                     .build();
 
