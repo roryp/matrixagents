@@ -116,7 +116,7 @@ export default function Dashboard({ patterns }: DashboardProps) {
       >
         <h3 className="text-lg font-semibold mb-4">Built With</h3>
         <div className="flex flex-wrap justify-center gap-4">
-          {['LangChain4j', 'Spring Boot 3.2', 'Java 21', 'React 18', 'D3.js', 'TypeScript', 'Tailwind CSS', 'WebSocket'].map((tech) => (
+          {['LangChain4j 1.10', 'Spring Boot 4.0', 'Java 21', 'React 18', 'D3.js', 'TypeScript', 'Tailwind CSS', 'WebSocket'].map((tech) => (
             <span
               key={tech}
               className="px-4 py-2 rounded-full border border-matrix-primary/30 bg-matrix-dark/50 text-sm"

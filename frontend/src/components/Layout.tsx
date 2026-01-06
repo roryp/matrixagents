@@ -55,7 +55,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Footer */}
       <footer className="border-t border-matrix-primary/20 mt-auto py-6">
         <div className="max-w-7xl mx-auto px-4 text-center text-matrix-secondary text-sm">
-          <p>Powered by LangChain4j Agentic Module • Spring Boot 3.2 • Java 21 • React + D3</p>
+          <p>Powered by LangChain4j Agentic Module • Spring Boot 4.0 • Java 21 • React + D3</p>
         </div>
       </footer>
     </div>

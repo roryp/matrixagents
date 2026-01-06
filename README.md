@@ -211,8 +211,10 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 ### Backend
 - **Java 21** with Virtual Threads
 - **Spring Boot 4.0.1**
-- **LangChain4j 1.0.0** (Core)
-- **LangChain4j OpenAI Official 1.0.0-beta5** (Azure OpenAI)
+- **LangChain4j 1.10.0** (Core)
+- **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
+- **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
+- **Spring Dotenv** for `.env` file support
 - **WebSocket** (STOMP over SockJS)
 
 ### Frontend
@@ -232,12 +234,15 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 ### Backend Setup
 
-1. Set environment variables:
-```bash
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
-export AZURE_OPENAI_API_KEY="your-api-key"
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+1. Create a `.env` file in the project root with your Azure OpenAI credentials:
+```env
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-api-key
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 ```
+
+> **Note:** The `.env` file is excluded from git via `.gitignore` to keep your credentials secure.
 
 2. Run the backend:
 ```bash
@@ -294,6 +299,17 @@ matrixagents/
 ```
 
 ## Configuration
+
+### Environment Variables
+
+The application reads Azure OpenAI configuration from a `.env` file in the project root:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `AZURE_OPENAI_ENDPOINT` | Your Azure OpenAI resource endpoint | `https://your-resource.openai.azure.com/` |
+| `AZURE_OPENAI_API_KEY` | Your Azure OpenAI API key | `your-api-key` |
+| `AZURE_OPENAI_DEPLOYMENT` | Chat model deployment name | `gpt-4o` |
+| `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | Embedding model deployment name | `text-embedding-3-small` |
 
 ### Azure OpenAI
 
