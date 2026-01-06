@@ -10,16 +10,16 @@ import org.springframework.context.annotation.Primary;
 @Configuration
 public class LangChainConfig {
 
-    @Value("${AZURE_OPENAI_API_KEY:}")
+    @Value("${azure.openai.api-key:}")
     private String apiKey;
 
-    @Value("${AZURE_OPENAI_ENDPOINT:}")
+    @Value("${azure.openai.endpoint:}")
     private String endpoint;
 
-    @Value("${AZURE_OPENAI_DEPLOYMENT:gpt-5}")
+    @Value("${azure.openai.deployment:gpt-5}")
     private String deploymentName;
 
-    @Value("${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:text-embedding-3-small}")
+    @Value("${azure.openai.embedding-deployment:text-embedding-3-small}")
     private String embeddingDeploymentName;
 
     @Bean

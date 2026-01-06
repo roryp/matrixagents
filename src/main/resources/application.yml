@@ -7,6 +7,16 @@ spring:
   mvc:
     async:
       request-timeout: 300000
+  config:
+    import: optional:file:.env[.properties]
+
+# Azure OpenAI Configuration
+azure:
+  openai:
+    endpoint: ${AZURE_OPENAI_ENDPOINT:}
+    api-key: ${AZURE_OPENAI_API_KEY:}
+    deployment: ${AZURE_OPENAI_DEPLOYMENT:gpt-5}
+    embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:text-embedding-3-small}
 
 # CORS configuration for React frontend
 cors:
