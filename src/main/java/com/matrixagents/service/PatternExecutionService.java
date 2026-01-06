@@ -13,8 +13,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PreDestroy;
 
 import com.matrixagents.agents.ConditionalAgents.ExpertChatbot;
 import com.matrixagents.agents.GOAPAgents.GoalPlanner;
@@ -58,6 +62,8 @@ import dev.langchain4j.service.AiServices;
 @Service
 public class PatternExecutionService {
 
+    private static final Logger log = LoggerFactory.getLogger(PatternExecutionService.class);
+
     private final ChatModel chatModel;
     private final ChatModel plannerModel;
     private final EventPublisher eventPublisher;
@@ -73,6 +79,28 @@ public class PatternExecutionService {
         this.plannerModel = plannerModel;
         this.eventPublisher = eventPublisher;
         this.humanInputService = humanInputService;
+    }
+
+    /**
+     * Cleanup executor service on application shutdown.
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("Shutting down PatternExecutionService executor...");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                log.warn("Executor did not terminate gracefully, forcing shutdown...");
+                executor.shutdownNow();
+                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.error("Executor did not terminate after forced shutdown");
+                }
+            }
+        } catch (InterruptedException e) {
+            log.warn("Shutdown interrupted, forcing immediate shutdown");
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     public CompletableFuture<ExecutionResult> executePattern(String patternId, String prompt) {
@@ -259,7 +287,7 @@ public class PatternExecutionService {
                     .chatModel(chatModel)
                     .build();
 
-            int maxIterations = 3;
+            int maxIterations = 5;
             double targetScore = 0.8;
             String story = null;
             double score = 0.0;
