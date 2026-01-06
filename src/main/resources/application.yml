@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: matrix-agents-showcase
+
+# CORS configuration for React frontend
+cors:
+  allowed-origins: http://localhost:5173,http://localhost:3000
+
+logging:
+  level:
+    dev.langchain4j: DEBUG
+    com.matrixagents: DEBUG

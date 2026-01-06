@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --matrix-black: #0d0d0d;
+  --matrix-dark: #1a1a2e;
+  --matrix-primary: #00ff41;
+  --matrix-secondary: #008f11;
+  --matrix-accent: #003b00;
+  --matrix-glow: #39ff14;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--matrix-black);
+  color: var(--matrix-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Matrix rain background effect */
+.matrix-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background: 
+    linear-gradient(180deg, transparent 0%, rgba(0, 255, 65, 0.02) 50%, transparent 100%),
+    radial-gradient(ellipse at center, rgba(0, 255, 65, 0.05) 0%, transparent 70%);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--matrix-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--matrix-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--matrix-primary);
+}
+
+/* Glow effects */
+.glow-text {
+  text-shadow: 0 0 10px var(--matrix-primary), 0 0 20px var(--matrix-primary);
+}
+
+.glow-border {
+  box-shadow: 0 0 5px var(--matrix-primary), inset 0 0 5px rgba(0, 255, 65, 0.1);
+}
+
+.glow-border-active {
+  box-shadow: 0 0 10px var(--matrix-primary), 0 0 20px var(--matrix-primary), inset 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+/* Card hover effect */
+.matrix-card {
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.9) 0%, rgba(13, 13, 13, 0.95) 100%);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  transition: all 0.3s ease;
+}
+
+.matrix-card:hover {
+  border-color: var(--matrix-primary);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Button styles */
+.matrix-btn {
+  background: linear-gradient(135deg, var(--matrix-accent) 0%, var(--matrix-dark) 100%);
+  border: 1px solid var(--matrix-primary);
+  color: var(--matrix-primary);
+  padding: 0.75rem 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.matrix-btn:hover {
+  background: var(--matrix-primary);
+  color: var(--matrix-black);
+  box-shadow: 0 0 20px var(--matrix-primary);
+}
+
+.matrix-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input styles */
+.matrix-input {
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  color: var(--matrix-primary);
+  padding: 0.75rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.matrix-input:focus {
+  outline: none;
+  border-color: var(--matrix-primary);
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.3);
+}
+
+.matrix-input::placeholder {
+  color: rgba(0, 255, 65, 0.5);
+}
+
+/* Animation for agent nodes */
+@keyframes node-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 5px var(--matrix-primary));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 15px var(--matrix-primary));
+  }
+}
+
+.node-active {
+  animation: node-pulse 1s ease-in-out infinite;
+}
+
+/* Edge flow animation */
+@keyframes edge-flow {
+  0% {
+    stroke-dashoffset: 20;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.edge-active {
+  stroke-dasharray: 10, 5;
+  animation: edge-flow 0.5s linear infinite;
+}
+
+/* Log entry animation */
+@keyframes log-entry {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.log-entry {
+  animation: log-entry 0.3s ease-out;
+}
+
+/* Typing cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.typing-cursor::after {
+  content: '▌';
+  animation: blink 1s step-end infinite;
+}
