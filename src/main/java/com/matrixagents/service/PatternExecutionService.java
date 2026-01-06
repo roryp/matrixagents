@@ -19,6 +19,8 @@ import com.matrixagents.agents.P2PAgents.*;
 import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
 import dev.langchain4j.agentic.AgenticServices;
+import dev.langchain4j.agentic.supervisor.SupervisorAgent;
+import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import org.springframework.beans.factory.annotation.Qualifier;
