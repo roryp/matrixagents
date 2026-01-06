@@ -1,13 +1,17 @@
 package com.matrixagents.agents;
 
-import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.agentic.Agent;
+import dev.langchain4j.agentic.declarative.ActivationCondition;
+import dev.langchain4j.agentic.declarative.ConditionalAgent;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 /**
- * Agents for the CONDITIONAL PATTERN.
+ * Agents for the CONDITIONAL PATTERN using langchain4j-agentic module.
  * Demonstrates routing to different agents based on classification.
- * Pattern: Router classifies -> Conditional expert activation.
+ * Pattern: CategoryRouter classifies -> Conditional expert activation.
+ * 
+ * Uses @Agent with @ConditionalAgent and @ActivationCondition for routing.
  */
 public interface ConditionalAgents {
 
@@ -15,77 +19,90 @@ public interface ConditionalAgents {
      * Category enum for routing decisions.
      */
     enum RequestCategory {
-        MEDICAL, LEGAL, TECHNICAL, GENERAL
+        MEDICAL, LEGAL, TECHNICAL, UNKNOWN
     }
 
     /**
      * CategoryRouter: Classifies user requests into categories.
+     * Output key: "category" - used by activation conditions
      */
     interface CategoryRouter {
-        @SystemMessage("""
-            You are a request classifier. Analyze the user's query and classify it
-            into exactly ONE of these categories:
-            
-            - MEDICAL: Health, symptoms, medications, treatments, medical conditions
-            - LEGAL: Laws, contracts, rights, regulations, legal processes
-            - TECHNICAL: Programming, software, hardware, IT systems, technology
-            - GENERAL: Everything else
-            
-            IMPORTANT: Respond with ONLY the category name in uppercase.
-            No explanations, just the single word: MEDICAL, LEGAL, TECHNICAL, or GENERAL
+        @UserMessage("""
+            Analyze the following user request and categorize it as 'legal', 'medical' or 'technical'.
+            In case the request doesn't belong to any of those categories categorize it as 'unknown'.
+            Reply with only one of those words and nothing else.
+            The user request is: '{{request}}'.
             """)
-        @UserMessage("Classify this request: {{request}}")
-        String classify(@V("request") String request);
+        @Agent(description = "Categorizes a user request", outputKey = "category")
+        RequestCategory classify(@V("request") String request);
     }
 
     /**
      * MedicalExpert: Provides medical-related information.
+     * Activated when category == MEDICAL
      */
     interface MedicalExpert {
-        @SystemMessage("""
-            You are a medical information assistant. Provide helpful health information
-            while always recommending consultation with healthcare professionals.
+        @UserMessage("""
+            You are a medical expert.
+            Analyze the following user request under a medical point of view and provide the best possible answer.
             Be informative but emphasize that this is not medical advice.
+            The user request is {{request}}.
             """)
-        @UserMessage("{{request}}")
-        String answer(@V("request") String request);
+        @Agent(description = "A medical expert", outputKey = "response")
+        String medical(@V("request") String request);
     }
 
     /**
      * LegalExpert: Provides legal-related information.
+     * Activated when category == LEGAL
      */
     interface LegalExpert {
-        @SystemMessage("""
-            You are a legal information assistant. Provide helpful legal information
-            while always recommending consultation with qualified attorneys.
+        @UserMessage("""
+            You are a legal expert.
+            Analyze the following user request under a legal point of view and provide the best possible answer.
             Be informative but emphasize that this is not legal advice.
+            The user request is {{request}}.
             """)
-        @UserMessage("{{request}}")
-        String answer(@V("request") String request);
+        @Agent(description = "A legal expert", outputKey = "response")
+        String legal(@V("request") String request);
     }
 
     /**
      * TechnicalExpert: Provides technical/programming information.
+     * Activated when category == TECHNICAL
      */
     interface TechnicalExpert {
-        @SystemMessage("""
-            You are a technical expert specializing in software, programming, and IT.
+        @UserMessage("""
+            You are a technical expert.
+            Analyze the following user request under a technical point of view and provide the best possible answer.
             Provide detailed, accurate technical information with code examples when relevant.
-            Explain concepts clearly for different skill levels.
+            The user request is {{request}}.
             """)
-        @UserMessage("{{request}}")
-        String answer(@V("request") String request);
+        @Agent(description = "A technical expert", outputKey = "response")
+        String technical(@V("request") String request);
     }
 
     /**
-     * GeneralExpert: Handles general queries.
+     * ExpertRouterAgent: Typed interface for the conditional workflow.
+     * Routes to appropriate expert based on category classification.
      */
-    interface GeneralExpert {
-        @SystemMessage("""
-            You are a helpful general assistant. Provide informative, friendly responses
-            to a wide variety of questions and requests.
-            """)
-        @UserMessage("{{request}}")
-        String answer(@V("request") String request);
+    interface ExpertRouterAgent {
+        @ConditionalAgent(outputKey = "response", subAgents = {MedicalExpert.class, TechnicalExpert.class, LegalExpert.class})
+        String askExpert(@V("request") String request);
+
+        @ActivationCondition(MedicalExpert.class)
+        static boolean activateMedical(@V("category") RequestCategory category) {
+            return category == RequestCategory.MEDICAL;
+        }
+
+        @ActivationCondition(TechnicalExpert.class)
+        static boolean activateTechnical(@V("category") RequestCategory category) {
+            return category == RequestCategory.TECHNICAL;
+        }
+
+        @ActivationCondition(LegalExpert.class)
+        static boolean activateLegal(@V("category") RequestCategory category) {
+            return category == RequestCategory.LEGAL;
+        }
     }
 }

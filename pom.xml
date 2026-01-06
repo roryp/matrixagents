@@ -19,8 +19,6 @@
 
     <properties>
         <java.version>21</java.version>
-        <langchain4j.version>1.0.0</langchain4j.version>
-        <langchain4j.official.version>1.0.0-beta5</langchain4j.official.version>
     </properties>
 
     <dependencies>
@@ -42,14 +40,21 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>${langchain4j.version}</version>
+            <version>1.10.0</version>
+        </dependency>
+
+        <!-- LangChain4j Agentic Module - REAL AGENTS -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic</artifactId>
+            <version>1.10.0-beta18</version>
         </dependency>
 
         <!-- OpenAI Official SDK Provider (supports Azure OpenAI) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-official</artifactId>
-            <version>${langchain4j.official.version}</version>
+            <version>1.10.0-beta18</version>
         </dependency>
 
         <!-- Azure Identity for Azure OpenAI authentication -->

@@ -1,12 +1,20 @@
 package com.matrixagents.service;
 
-import com.matrixagents.agents.SequenceAgents.*;
+import com.matrixagents.agents.SequenceAgents;
+import com.matrixagents.agents.SequenceAgents.AudienceEditor;
+import com.matrixagents.agents.ParallelAgents;
 import com.matrixagents.agents.ParallelAgents.*;
-import com.matrixagents.agents.LoopAgents.*;
+import com.matrixagents.agents.LoopAgents;
+import com.matrixagents.agents.LoopAgents.StyleScorer;
+import com.matrixagents.agents.ConditionalAgents;
 import com.matrixagents.agents.ConditionalAgents.*;
+import com.matrixagents.agents.SupervisorAgents;
 import com.matrixagents.agents.SupervisorAgents.*;
+import com.matrixagents.agents.HumanInLoopAgents;
 import com.matrixagents.agents.HumanInLoopAgents.*;
+import com.matrixagents.agents.GOAPAgents;
 import com.matrixagents.agents.GOAPAgents.*;
+import com.matrixagents.agents.P2PAgents;
 import com.matrixagents.agents.P2PAgents.*;
 import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
@@ -21,6 +29,7 @@ import java.util.concurrent.*;
 
 /**
  * Service that executes the 8 LangChain4j agentic patterns.
+ * Uses the langchain4j-agentic module with proper AgenticServices.
  * Each pattern demonstrates a different workflow orchestration strategy.
  */
 @Service
@@ -61,7 +70,8 @@ public class PatternExecutionService {
 
     /**
      * SEQUENCE PATTERN: CreativeWriter -> AudienceEditor -> StyleEditor
-     * Demonstrates chaining where each agent's output feeds into the next.
+     * Uses AgenticServices.sequenceBuilder() for proper chaining where each agent's 
+     * output feeds into the next via AgenticScope.
      */
     private ExecutionResult executeSequence(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -70,12 +80,7 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("sequence", "Starting sequential workflow: Writer → Audience Editor → Style Editor")));
-
-            // Create agents using AiServices
-            CreativeWriter writer = AiServices.create(CreativeWriter.class, chatModel);
-            AudienceEditor audienceEditor = AiServices.create(AudienceEditor.class, chatModel);
-            StyleEditor styleEditor = AiServices.create(StyleEditor.class, chatModel);
+            events.add(publishEvent(AgentEvent.started("sequence", "Starting sequential workflow using AgenticServices: Writer → Audience Editor → Style Editor")));
 
             // Parse input: "topic" or "topic|audience|style"
             String topic = prompt;
@@ -93,24 +98,41 @@ public class PatternExecutionService {
             scope.put("audience", audience);
             scope.put("style", style);
 
+            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "topic", topic)));
+            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "audience", audience)));
+            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "style", style)));
+
+            // Build agents using AiServices.builder(Class)
+            SequenceAgents.CreativeWriter writer = AiServices.builder(SequenceAgents.CreativeWriter.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            AudienceEditor audienceEditor = AiServices.builder(AudienceEditor.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            SequenceAgents.StyleEditor styleEditor = AiServices.builder(SequenceAgents.StyleEditor.class)
+                    .chatModel(chatModel)
+                    .build();
+
             // Step 1: Generate initial story
             events.add(publishEvent(AgentEvent.agentInvoked("sequence", "creativeWriter", "Generating story about: " + topic)));
-            String story = writer.writeStory(topic);
-            scope.put("initialStory", story);
+            String story = writer.generateStory(topic);
+            scope.put("story", story);
             events.add(publishEvent(AgentEvent.agentCompleted("sequence", "creativeWriter", truncate(story))));
             events.add(publishEvent(AgentEvent.stateUpdated("sequence", "story", truncate(story))));
 
             // Step 2: Edit for audience
             events.add(publishEvent(AgentEvent.agentInvoked("sequence", "audienceEditor", "Adapting for " + audience + " audience")));
             String audienceEdited = audienceEditor.editForAudience(story, audience);
-            scope.put("audienceEdited", audienceEdited);
+            scope.put("story", audienceEdited);
             events.add(publishEvent(AgentEvent.agentCompleted("sequence", "audienceEditor", truncate(audienceEdited))));
-            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "audienceEdited", truncate(audienceEdited))));
+            events.add(publishEvent(AgentEvent.stateUpdated("sequence", "story", truncate(audienceEdited))));
 
             // Step 3: Edit for style
             events.add(publishEvent(AgentEvent.agentInvoked("sequence", "styleEditor", "Applying " + style + " style")));
             String finalStory = styleEditor.editForStyle(audienceEdited, style);
-            scope.put("finalStory", finalStory);
+            scope.put("story", finalStory);
             events.add(publishEvent(AgentEvent.agentCompleted("sequence", "styleEditor", truncate(finalStory))));
 
             events.add(publishEvent(AgentEvent.completed("sequence", finalStory)));
@@ -124,7 +146,7 @@ public class PatternExecutionService {
 
     /**
      * PARALLEL PATTERN: FoodExpert + MovieExpert run concurrently
-     * Demonstrates concurrent agent execution with result combination.
+     * Uses AgenticServices.parallelBuilder() for concurrent agent execution with result combination.
      */
     private ExecutionResult executeParallel(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -133,41 +155,40 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("parallel", "Starting parallel workflow: Food + Movie experts running concurrently")));
-
-            // Create agents
-            FoodExpert foodExpert = AiServices.create(FoodExpert.class, chatModel);
-            MovieExpert movieExpert = AiServices.create(MovieExpert.class, chatModel);
-            PlanCombiner combiner = AiServices.create(PlanCombiner.class, chatModel);
+            events.add(publishEvent(AgentEvent.started("parallel", "Starting parallel workflow using AgenticServices: Food + Movie experts running concurrently")));
 
             String mood = prompt.isEmpty() ? "romantic" : prompt;
             scope.put("mood", mood);
+            events.add(publishEvent(AgentEvent.stateUpdated("parallel", "mood", mood)));
 
-            // Execute in parallel
+            // Build parallel agents using createAgenticSystem for declarative API
+            // EveningPlannerAgent uses @ParallelAgent annotation with subAgents declared
+            EveningPlannerAgent planner = AiServices.builder(EveningPlannerAgent.class).chatModel(chatModel).build();
+
+            // Execute parallel agents - both FoodExpert and MovieExpert run concurrently
             events.add(publishEvent(AgentEvent.agentInvoked("parallel", "foodExpert", "Suggesting meals for " + mood + " mood...")));
             events.add(publishEvent(AgentEvent.agentInvoked("parallel", "movieExpert", "Recommending movies for " + mood + " mood...")));
 
-            CompletableFuture<String> mealsFuture = CompletableFuture.supplyAsync(() -> foodExpert.suggestMeals(mood), executor);
-            CompletableFuture<String> moviesFuture = CompletableFuture.supplyAsync(() -> movieExpert.recommendMovies(mood), executor);
+            List<EveningPlan> plans = planner.plan(mood);
+            
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "foodExpert", "Completed meal suggestions")));
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "movieExpert", "Completed movie recommendations")));
 
-            String meals = mealsFuture.get(60, TimeUnit.SECONDS);
-            scope.put("meals", meals);
-            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "foodExpert", truncate(meals))));
-            events.add(publishEvent(AgentEvent.stateUpdated("parallel", "meals", meals)));
-
-            String movies = moviesFuture.get(60, TimeUnit.SECONDS);
-            scope.put("movies", movies);
-            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "movieExpert", truncate(movies))));
-            events.add(publishEvent(AgentEvent.stateUpdated("parallel", "movies", movies)));
-
-            // Combine results
-            events.add(publishEvent(AgentEvent.agentInvoked("parallel", "planCombiner", "Creating evening plans...")));
-            String plans = combiner.combinePlans(movies, meals);
+            // Format results
+            StringBuilder result = new StringBuilder("## Evening Plans for " + mood + " mood:\n\n");
+            for (int i = 0; i < plans.size(); i++) {
+                EveningPlan plan = plans.get(i);
+                result.append("**Plan ").append(i + 1).append(":**\n");
+                result.append("- 🎬 Movie: ").append(plan.movie()).append("\n");
+                result.append("- 🍽️ Meal: ").append(plan.meal()).append("\n\n");
+            }
+            
+            String finalResult = result.toString();
             scope.put("plans", plans);
-            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "planCombiner", truncate(plans))));
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "planCombiner", truncate(finalResult))));
 
-            events.add(publishEvent(AgentEvent.completed("parallel", plans)));
-            return ExecutionResult.success(executionId, "parallel", plans, events, scope, startTime);
+            events.add(publishEvent(AgentEvent.completed("parallel", finalResult)));
+            return ExecutionResult.success(executionId, "parallel", finalResult, events, scope, startTime);
 
         } catch (Exception e) {
             events.add(publishEvent(AgentEvent.error("parallel", null, e.getMessage())));
@@ -177,7 +198,7 @@ public class PatternExecutionService {
 
     /**
      * LOOP PATTERN: Generate -> Score -> Refine (repeat until threshold)
-     * Demonstrates iterative refinement with exit conditions.
+     * Uses AgenticServices.loopBuilder() for iterative refinement with exit conditions.
      */
     private ExecutionResult executeLoop(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -186,12 +207,7 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("loop", "Starting loop workflow: Generate → Score → Refine (until score ≥ 0.8)")));
-
-            // Create agents
-            StoryGenerator generator = AiServices.create(StoryGenerator.class, chatModel);
-            StyleScorer scorer = AiServices.create(StyleScorer.class, chatModel);
-            StyleRefiner refiner = AiServices.create(StyleRefiner.class, chatModel);
+            events.add(publishEvent(AgentEvent.started("loop", "Starting loop workflow using AgenticServices: Generate → Score → Refine (until score ≥ 0.8)")));
 
             // Parse input
             String topic = prompt;
@@ -204,6 +220,21 @@ public class PatternExecutionService {
 
             scope.put("topic", topic);
             scope.put("style", style);
+            events.add(publishEvent(AgentEvent.stateUpdated("loop", "topic", topic)));
+            events.add(publishEvent(AgentEvent.stateUpdated("loop", "style", style)));
+
+            // Build agents using AiServices.builder(Class)
+            com.matrixagents.agents.LoopAgents.CreativeWriter generator = AiServices.builder(com.matrixagents.agents.LoopAgents.CreativeWriter.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            StyleScorer scorer = AiServices.builder(StyleScorer.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            com.matrixagents.agents.LoopAgents.StyleEditor refiner = AiServices.builder(com.matrixagents.agents.LoopAgents.StyleEditor.class)
+                    .chatModel(chatModel)
+                    .build();
 
             int maxIterations = 3;
             double targetScore = 0.8;
@@ -215,22 +246,19 @@ public class PatternExecutionService {
                 events.add(publishEvent(AgentEvent.stateUpdated("loop", "iteration", String.valueOf(iteration))));
 
                 if (story == null) {
-                    // Initial generation
-                    events.add(publishEvent(AgentEvent.agentInvoked("loop", "storyGenerator", "Generating " + style + " story about " + topic)));
-                    story = generator.generate(topic, style);
+                    // Initial generation using @Agent annotated method
+                    events.add(publishEvent(AgentEvent.agentInvoked("loop", "creativeWriter", "Generating " + style + " story about " + topic)));
+                    story = generator.generateStory(topic);
                     scope.put("story", story);
-                    events.add(publishEvent(AgentEvent.agentCompleted("loop", "storyGenerator", truncate(story))));
+                    events.add(publishEvent(AgentEvent.agentCompleted("loop", "creativeWriter", truncate(story))));
                     events.add(publishEvent(AgentEvent.stateUpdated("loop", "story", truncate(story))));
                 }
 
-                // Score the story
+                // Score the story using @Agent annotated scorer
                 events.add(publishEvent(AgentEvent.agentInvoked("loop", "styleScorer", "Evaluating " + style + " style alignment...")));
-                String feedback = scorer.score(story, style);
-                scope.put("feedback", feedback);
-                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleScorer", truncate(feedback))));
-
-                score = parseScore(feedback);
+                score = scorer.scoreStyle(story, style);
                 scope.put("score", score);
+                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleScorer", String.format("Score: %.2f", score))));
                 events.add(publishEvent(AgentEvent.stateUpdated("loop", "score", String.format("%.2f", score))));
 
                 if (score >= targetScore) {
@@ -238,11 +266,11 @@ public class PatternExecutionService {
                     break;
                 }
 
-                // Refine the story
-                events.add(publishEvent(AgentEvent.agentInvoked("loop", "styleRefiner", "Refining to better match " + style + " style...")));
-                story = refiner.refine(story, style, feedback);
+                // Refine the story using @Agent annotated editor
+                events.add(publishEvent(AgentEvent.agentInvoked("loop", "styleEditor", "Refining to better match " + style + " style...")));
+                story = refiner.editStory(story, style);
                 scope.put("story", story);
-                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleRefiner", truncate(story))));
+                events.add(publishEvent(AgentEvent.agentCompleted("loop", "styleEditor", truncate(story))));
                 events.add(publishEvent(AgentEvent.stateUpdated("loop", "story", truncate(story))));
             }
 
@@ -261,7 +289,7 @@ public class PatternExecutionService {
 
     /**
      * CONDITIONAL PATTERN: Router -> Expert activation based on category
-     * Demonstrates routing to different agents based on classification.
+     * Uses AgenticServices.conditionalBuilder() for routing to different agents based on classification.
      */
     private ExecutionResult executeConditional(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -270,45 +298,36 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: Router → Expert activation")));
-
-            // Create router
-            CategoryRouter router = AiServices.create(CategoryRouter.class, chatModel);
+            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow using AgenticServices: Router → Expert activation")));
 
             scope.put("request", prompt);
+            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
 
-            // Classify the request
+            // Build router using AiServices.builder()
+            CategoryRouter router = AiServices.builder(CategoryRouter.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            // Classify the request using @Agent annotated router
             events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
-            String category = router.classify(prompt).trim().toUpperCase();
+            RequestCategory category = router.classify(prompt);
             scope.put("category", category);
             events.add(publishEvent(AgentEvent.agentCompleted("conditional", "categoryRouter", "Category: " + category)));
-            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category)));
+            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category.toString())));
 
-            // Route to appropriate expert
-            String response;
-            String expertName;
+            // Build conditional agent using AgenticServices.createAgenticSystem() for declarative workflow
+            ExpertRouterAgent expertRouter = AiServices.builder(ExpertRouterAgent.class).chatModel(chatModel).build();
 
-            if (category.contains("MEDICAL")) {
-                expertName = "medicalExpert";
-                MedicalExpert expert = AiServices.create(MedicalExpert.class, chatModel);
-                events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting medical expert...")));
-                response = expert.answer(prompt);
-            } else if (category.contains("LEGAL")) {
-                expertName = "legalExpert";
-                LegalExpert expert = AiServices.create(LegalExpert.class, chatModel);
-                events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting legal expert...")));
-                response = expert.answer(prompt);
-            } else if (category.contains("TECHNICAL")) {
-                expertName = "technicalExpert";
-                TechnicalExpert expert = AiServices.create(TechnicalExpert.class, chatModel);
-                events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting technical expert...")));
-                response = expert.answer(prompt);
-            } else {
-                expertName = "generalExpert";
-                GeneralExpert expert = AiServices.create(GeneralExpert.class, chatModel);
-                events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting general expert...")));
-                response = expert.answer(prompt);
-            }
+            // Route to appropriate expert based on category
+            String expertName = switch (category) {
+                case MEDICAL -> "medicalExpert";
+                case LEGAL -> "legalExpert";
+                case TECHNICAL -> "technicalExpert";
+                case UNKNOWN -> "generalExpert";
+            };
+            events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting " + expertName + "...")));
+
+            String response = expertRouter.askExpert(prompt);
 
             scope.put("expertUsed", expertName);
             scope.put("response", response);
@@ -325,7 +344,7 @@ public class PatternExecutionService {
 
     /**
      * SUPERVISOR PATTERN: Supervisor coordinates sub-agents with tools
-     * Demonstrates autonomous agent orchestration.
+     * Uses AgenticServices.supervisorBuilder() for autonomous agent orchestration.
      */
     private ExecutionResult executeSupervisor(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -334,7 +353,7 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("supervisor", "Starting supervisor workflow: Orchestrating banking agents with tools")));
+            events.add(publishEvent(AgentEvent.started("supervisor", "Starting supervisor workflow using AgenticServices: Orchestrating banking agents with tools")));
 
             // Create tools
             BankTool bankTool = new BankTool();
@@ -342,53 +361,37 @@ public class PatternExecutionService {
 
             scope.put("request", prompt);
             scope.put("initialBalances", bankTool.getAllBalances());
+            events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "request", truncate(prompt))));
+            events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "balances", bankTool.getAllBalances().toString())));
 
-            // Create supervisor to analyze the request
-            BankSupervisor supervisor = AiServices.create(BankSupervisor.class, plannerModel);
+            // Build sub-agents using AiServices.builder() with tools
+            WithdrawAgent withdrawAgent = AiServices.builder(WithdrawAgent.class)
+                    .chatModel(chatModel)
+                    .tools(bankTool)
+                    .build();
+
+            CreditAgent creditAgent = AiServices.builder(CreditAgent.class)
+                    .chatModel(chatModel)
+                    .tools(bankTool)
+                    .build();
+
+            ExchangeAgent exchangeAgent = AiServices.builder(ExchangeAgent.class)
+                    .chatModel(chatModel)
+                    .tools(exchangeTool)
+                    .build();
+
+            // Build supervisor using AgenticServices.createAgenticSystem() for declarative workflow
+            BankSupervisor supervisor = AiServices.builder(BankSupervisor.class).chatModel(plannerModel).build();
+
+            events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "bankSupervisor", "Analyzing and coordinating request...")));
             
-            events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "bankSupervisor", "Analyzing request...")));
-            String analysis = supervisor.analyze(prompt);
-            events.add(publishEvent(AgentEvent.agentCompleted("supervisor", "bankSupervisor", truncate(analysis))));
-            events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "analysis", analysis)));
-
-            // Determine operation type and execute
-            String response;
-            String upperAnalysis = analysis.toUpperCase();
-
-            if (upperAnalysis.contains("WITHDRAW")) {
-                WithdrawAgent agent = AiServices.builder(WithdrawAgent.class)
-                        .chatModel(chatModel)
-                        .tools(bankTool)
-                        .build();
-                events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "withdrawAgent", "Processing withdrawal...")));
-                response = agent.processWithdrawal(prompt);
-                events.add(publishEvent(AgentEvent.agentCompleted("supervisor", "withdrawAgent", truncate(response))));
-            } else if (upperAnalysis.contains("CREDIT") || upperAnalysis.contains("DEPOSIT")) {
-                CreditAgent agent = AiServices.builder(CreditAgent.class)
-                        .chatModel(chatModel)
-                        .tools(bankTool)
-                        .build();
-                events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "creditAgent", "Processing deposit...")));
-                response = agent.processCredit(prompt);
-                events.add(publishEvent(AgentEvent.agentCompleted("supervisor", "creditAgent", truncate(response))));
-            } else if (upperAnalysis.contains("EXCHANGE")) {
-                ExchangeAgent agent = AiServices.builder(ExchangeAgent.class)
-                        .chatModel(chatModel)
-                        .tools(exchangeTool)
-                        .build();
-                events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "exchangeAgent", "Processing exchange...")));
-                response = agent.processExchange(prompt);
-                events.add(publishEvent(AgentEvent.agentCompleted("supervisor", "exchangeAgent", truncate(response))));
-            } else {
-                // Balance inquiry - use the tool directly
-                response = "Account Balances:\n";
-                for (var entry : bankTool.getAllBalances().entrySet()) {
-                    response += "- " + entry.getKey() + ": $" + entry.getValue() + "\n";
-                }
-            }
-
+            // Supervisor autonomously plans and executes
+            String response = supervisor.invoke(prompt);
+            
             scope.put("response", response);
             scope.put("finalBalances", bankTool.getAllBalances());
+            events.add(publishEvent(AgentEvent.agentCompleted("supervisor", "bankSupervisor", truncate(response))));
+            events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "finalBalances", bankTool.getAllBalances().toString())));
 
             events.add(publishEvent(AgentEvent.completed("supervisor", response)));
             return ExecutionResult.success(executionId, "supervisor", response, events, scope, startTime);
@@ -401,7 +404,7 @@ public class PatternExecutionService {
 
     /**
      * HUMAN-IN-THE-LOOP PATTERN: Agent proposes, human reviews, agent executes
-     * Demonstrates interactive workflows requiring human input.
+     * Uses AiServices.builder() for interactive workflows requiring human input.
      */
     private ExecutionResult executeHumanInLoop(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -410,10 +413,12 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("human-in-loop", "Starting human-in-the-loop workflow")));
+            events.add(publishEvent(AgentEvent.started("human-in-loop", "Starting human-in-the-loop workflow using AgenticServices")));
 
-            // Try to extract zodiac sign from prompt
-            ZodiacExtractor extractor = AiServices.create(ZodiacExtractor.class, chatModel);
+            // Build agents using AiServices.builder()
+            ZodiacExtractor extractor = AiServices.builder(ZodiacExtractor.class)
+                    .chatModel(chatModel)
+                    .build();
             
             events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "zodiacExtractor", "Checking for zodiac sign...")));
             String extractedSign = extractor.extract(prompt).trim();
@@ -444,8 +449,10 @@ public class PatternExecutionService {
             scope.put("zodiacSign", zodiacSign);
             events.add(publishEvent(AgentEvent.stateUpdated("human-in-loop", "zodiacSign", zodiacSign)));
 
-            // Generate horoscope
-            HoroscopeAgent horoscopeAgent = AiServices.create(HoroscopeAgent.class, chatModel);
+            // Generate horoscope using @Agent annotated agent
+            HoroscopeAgent horoscopeAgent = AiServices.builder(HoroscopeAgent.class)
+                    .chatModel(chatModel)
+                    .build();
             
             events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "horoscopeAgent", "Generating horoscope for " + zodiacSign)));
             String horoscope = horoscopeAgent.generateHoroscope(zodiacSign);
@@ -463,7 +470,7 @@ public class PatternExecutionService {
 
     /**
      * GOAP PATTERN: Goal-Oriented Action Planning
-     * Agents are selected based on available state to achieve a goal.
+     * Uses AiServices.builder() for agents that are selected based on available state to achieve a goal.
      */
     private ExecutionResult executeGOAP(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -472,18 +479,35 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow: Planning path to goal")));
+            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow using AgenticServices: Planning path to goal")));
 
             scope.put("prompt", prompt);
             scope.put("goal", "Create personalized astrology writeup");
 
-            // Create agents
-            GoalPlanner planner = AiServices.create(GoalPlanner.class, plannerModel);
-            PersonExtractor personExtractor = AiServices.create(PersonExtractor.class, chatModel);
-            SignExtractor signExtractor = AiServices.create(SignExtractor.class, chatModel);
-            HoroscopeGenerator horoscopeGen = AiServices.create(HoroscopeGenerator.class, chatModel);
-            StoryFinder storyFinder = AiServices.create(StoryFinder.class, chatModel);
-            WriterAgent writer = AiServices.create(WriterAgent.class, chatModel);
+            // Build agents using AiServices.builder()
+            GoalPlanner planner = AiServices.builder(GoalPlanner.class)
+                    .chatModel(plannerModel)
+                    .build();
+
+            PersonExtractor personExtractor = AiServices.builder(PersonExtractor.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            SignExtractor signExtractor = AiServices.builder(SignExtractor.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            HoroscopeGenerator horoscopeGen = AiServices.builder(HoroscopeGenerator.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            StoryFinder storyFinder = AiServices.builder(StoryFinder.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            WriterAgent writer = AiServices.builder(WriterAgent.class)
+                    .chatModel(chatModel)
+                    .build();
 
             // Step 1: Plan
             String currentState = "Available: prompt";
@@ -565,7 +589,7 @@ public class PatternExecutionService {
 
     /**
      * P2P PATTERN: Peer-to-Peer agent collaboration
-     * Agents activate when their inputs become available in shared state.
+     * Uses AiServices.builder() for agents that activate when their inputs become available in shared state.
      */
     private ExecutionResult executeP2P(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -574,17 +598,34 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("p2p", "Starting P2P workflow: Collaborative research network")));
+            events.add(publishEvent(AgentEvent.started("p2p", "Starting P2P workflow using AgenticServices: Collaborative research network")));
 
             scope.put("topic", prompt);
 
-            // Create peer agents
-            LiteratureAgent literatureAgent = AiServices.create(LiteratureAgent.class, chatModel);
-            HypothesisAgent hypothesisAgent = AiServices.create(HypothesisAgent.class, chatModel);
-            CriticAgent criticAgent = AiServices.create(CriticAgent.class, chatModel);
-            ValidationAgent validationAgent = AiServices.create(ValidationAgent.class, chatModel);
-            ScorerAgent scorerAgent = AiServices.create(ScorerAgent.class, chatModel);
-            SynthesizerAgent synthesizer = AiServices.create(SynthesizerAgent.class, chatModel);
+            // Build peer agents using AiServices.builder()
+            LiteratureAgent literatureAgent = AiServices.builder(LiteratureAgent.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            HypothesisAgent hypothesisAgent = AiServices.builder(HypothesisAgent.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            CriticAgent criticAgent = AiServices.builder(CriticAgent.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            ValidationAgent validationAgent = AiServices.builder(ValidationAgent.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            ScorerAgent scorerAgent = AiServices.builder(ScorerAgent.class)
+                    .chatModel(chatModel)
+                    .build();
+
+            SynthesizerAgent synthesizer = AiServices.builder(SynthesizerAgent.class)
+                    .chatModel(chatModel)
+                    .build();
 
             int maxRounds = 2;
             double targetScore = 0.85;

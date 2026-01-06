@@ -1,18 +1,23 @@
 package com.matrixagents.agents;
 
+import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Agents and Tools for the SUPERVISOR PATTERN.
+ * Agents and Tools for the SUPERVISOR PATTERN using langchain4j-agentic module.
  * Demonstrates autonomous agent orchestration with tool integration.
- * Pattern: Supervisor coordinates WithdrawAgent, CreditAgent, ExchangeAgent.
- * Each agent has access to specific tools (@Tool).
+ * Pattern: Supervisor autonomously coordinates WithdrawAgent, CreditAgent, ExchangeAgent.
+ * 
+ * Uses supervisorBuilder() for LLM-based planning and coordination.
+ * The supervisor generates a plan and invokes sub-agents based on the request.
  */
 public interface SupervisorAgents {
 
@@ -21,45 +26,45 @@ public interface SupervisorAgents {
      */
     class BankTool {
         private final Map<String, Double> accounts = new ConcurrentHashMap<>(Map.of(
-                "checking", 1000.0,
-                "savings", 5000.0
+                "mario", 1000.0,
+                "georgios", 1000.0
         ));
 
-        @Tool("Withdraw money from an account. Returns the new balance or an error message.")
-        public String withdraw(
-                @P("Account name (checking or savings)") String account,
-                @P("Amount to withdraw") double amount) {
-            String key = account.toLowerCase();
-            if (!accounts.containsKey(key)) {
-                return "Error: Account '" + account + "' not found";
+        public void createAccount(String user, Double initialBalance) {
+            if (accounts.containsKey(user.toLowerCase())) {
+                throw new RuntimeException("Account for user " + user + " already exists");
             }
-            double balance = accounts.get(key);
-            if (amount > balance) {
-                return "Error: Insufficient funds. Balance: $" + balance;
-            }
-            accounts.put(key, balance - amount);
-            return "Withdrew $" + amount + " from " + account + ". New balance: $" + accounts.get(key);
+            accounts.put(user.toLowerCase(), initialBalance);
         }
 
-        @Tool("Credit/deposit money to an account. Returns the new balance.")
-        public String credit(
-                @P("Account name (checking or savings)") String account,
-                @P("Amount to credit") double amount) {
-            String key = account.toLowerCase();
-            if (!accounts.containsKey(key)) {
-                return "Error: Account '" + account + "' not found";
+        public double getBalance(String user) {
+            Double balance = accounts.get(user.toLowerCase());
+            if (balance == null) {
+                throw new RuntimeException("No balance found for user " + user);
             }
-            accounts.put(key, accounts.get(key) + amount);
-            return "Credited $" + amount + " to " + account + ". New balance: $" + accounts.get(key);
+            return balance;
         }
 
-        @Tool("Get the current balance of an account.")
-        public String getBalance(@P("Account name (checking or savings)") String account) {
-            String key = account.toLowerCase();
-            if (!accounts.containsKey(key)) {
-                return "Error: Account '" + account + "' not found";
+        @Tool("Credit the given user with the given amount and return the new balance")
+        public Double credit(@P("user name") String user, @P("amount") Double amount) {
+            Double balance = accounts.get(user.toLowerCase());
+            if (balance == null) {
+                throw new RuntimeException("No balance found for user " + user);
             }
-            return account + " balance: $" + accounts.get(key);
+            Double newBalance = balance + amount;
+            accounts.put(user.toLowerCase(), newBalance);
+            return newBalance;
+        }
+
+        @Tool("Withdraw the given amount from the given user and return the new balance")
+        public Double withdraw(@P("user name") String user, @P("amount") Double amount) {
+            Double balance = accounts.get(user.toLowerCase());
+            if (balance == null) {
+                throw new RuntimeException("No balance found for user " + user);
+            }
+            Double newBalance = balance - amount;
+            accounts.put(user.toLowerCase(), newBalance);
+            return newBalance;
         }
 
         public Map<String, Double> getAllBalances() {
@@ -74,49 +79,37 @@ public interface SupervisorAgents {
         private static final Map<String, Double> RATES = Map.of(
                 "USD_EUR", 0.92,
                 "USD_GBP", 0.79,
-                "USD_JPY", 149.50,
                 "EUR_USD", 1.09,
                 "GBP_USD", 1.27
         );
 
-        @Tool("Exchange currency at current rates. Returns the converted amount.")
-        public String exchange(
-                @P("Source currency (USD, EUR, GBP, JPY)") String from,
-                @P("Target currency (USD, EUR, GBP, JPY)") String to,
-                @P("Amount to exchange") double amount) {
-            String key = from.toUpperCase() + "_" + to.toUpperCase();
-            if (!RATES.containsKey(key)) {
-                return "Error: Exchange rate for " + from + " to " + to + " not available";
+        @Tool("Exchange the given amount of money from the original to the target currency")
+        public Double exchange(
+                @P("originalCurrency") String originalCurrency,
+                @P("amount") Double amount,
+                @P("targetCurrency") String targetCurrency) {
+            String key = originalCurrency.toUpperCase() + "_" + targetCurrency.toUpperCase();
+            Double rate = RATES.get(key);
+            if (rate == null) {
+                throw new RuntimeException("Exchange rate for " + originalCurrency + " to " + targetCurrency + " not available");
             }
-            double rate = RATES.get(key);
-            double converted = amount * rate;
-            return String.format("Exchanged %.2f %s to %.2f %s (rate: %.4f)",
-                    amount, from.toUpperCase(), converted, to.toUpperCase(), rate);
-        }
-
-        @Tool("Get the current exchange rate between two currencies.")
-        public String getRate(
-                @P("Source currency") String from,
-                @P("Target currency") String to) {
-            String key = from.toUpperCase() + "_" + to.toUpperCase();
-            if (!RATES.containsKey(key)) {
-                return "Rate not available for " + from + " to " + to;
-            }
-            return String.format("1 %s = %.4f %s", from.toUpperCase(), RATES.get(key), to.toUpperCase());
+            return amount * rate;
         }
     }
 
     /**
      * WithdrawAgent: Handles withdrawal requests using BankTool.
+     * Output key: not specified (supervisor manages)
      */
     interface WithdrawAgent {
         @SystemMessage("""
-            You are a bank withdrawal specialist. Your job is to process withdrawal requests.
-            Use the withdraw tool to process the request.
-            Always confirm the account and amount before processing.
-            Report the result including the new balance.
+            You are a banker that can only withdraw US dollars (USD) from a user account.
             """)
-        String processWithdrawal(String request);
+        @UserMessage("""
+            Withdraw {{amount}} USD from {{user}}'s account and return the new balance.
+            """)
+        @Agent(description = "A banker that withdraws USD from an account")
+        String withdraw(@V("user") String user, @V("amount") Double amount);
     }
 
     /**
@@ -124,46 +117,37 @@ public interface SupervisorAgents {
      */
     interface CreditAgent {
         @SystemMessage("""
-            You are a bank deposit specialist. Your job is to process deposits and credits.
-            Use the credit tool to process the request.
-            Always confirm the account and amount before processing.
-            Report the result including the new balance.
+            You are a banker that can only credit US dollars (USD) to a user account.
             """)
-        String processCredit(String request);
+        @UserMessage("""
+            Credit {{amount}} USD to {{user}}'s account and return the new balance.
+            """)
+        @Agent(description = "A banker that credits USD to an account")
+        String credit(@V("user") String user, @V("amount") Double amount);
     }
 
     /**
      * ExchangeAgent: Handles currency exchange using ExchangeTool.
      */
     interface ExchangeAgent {
-        @SystemMessage("""
-            You are a currency exchange specialist. Your job is to convert currencies.
-            Use the exchange tool to process conversions.
-            Always show the exchange rate used.
+        @UserMessage("""
+            You are an operator exchanging money in different currencies.
+            Use the tool to exchange {{amount}} {{originalCurrency}} into {{targetCurrency}}
+            returning only the final amount provided by the tool as it is and nothing else.
             """)
-        String processExchange(String request);
+        @Agent(description = "A money exchanger that converts a given amount of money from the original to the target currency")
+        Double exchange(
+                @V("originalCurrency") String originalCurrency,
+                @V("amount") Double amount,
+                @V("targetCurrency") String targetCurrency);
     }
 
     /**
-     * BankSupervisor: Orchestrates the sub-agents based on the request.
+     * SupervisorAgent: Typed interface for the supervisor pattern.
+     * The supervisor autonomously plans and coordinates sub-agents.
      */
     interface BankSupervisor {
-        @SystemMessage("""
-            You are a bank supervisor AI that orchestrates banking operations.
-            Analyze the customer's request and determine which operation is needed:
-            
-            - WITHDRAW: For withdrawal requests
-            - CREDIT: For deposit/credit requests
-            - EXCHANGE: For currency conversion requests
-            - BALANCE: For balance inquiries
-            
-            First respond with the operation type, then provide detailed instructions
-            for the appropriate sub-agent.
-            
-            Format:
-            OPERATION: [type]
-            DETAILS: [specific instructions]
-            """)
-        String analyze(String request);
+        @Agent
+        String invoke(@V("request") String request);
     }
 }

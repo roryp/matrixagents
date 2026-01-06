@@ -1,18 +1,22 @@
 package com.matrixagents.agents;
 
+import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 /**
- * Agents for the HUMAN-IN-THE-LOOP PATTERN.
+ * Agents for the HUMAN-IN-THE-LOOP PATTERN using langchain4j-agentic module.
  * Demonstrates interactive agent workflows requiring human input.
  * Pattern: Agent proposes -> Human reviews/approves -> Agent executes.
+ * 
+ * Uses @Agent annotation for proper agent orchestration with human intervention points.
  */
 public interface HumanInLoopAgents {
 
     /**
      * ProposalAgent: Creates proposals that require human approval.
+     * Output key: "proposal" - awaits human review
      */
     interface ProposalAgent {
         @SystemMessage("""
@@ -28,11 +32,14 @@ public interface HumanInLoopAgents {
             Be thorough but concise.
             """)
         @UserMessage("Create a proposal for: {{request}}")
+        @Agent(description = "Creates proposals that require human approval", outputKey = "proposal")
         String createProposal(@V("request") String request);
     }
 
     /**
      * ExecutionAgent: Executes approved proposals with any human modifications.
+     * Input: "proposal" and "feedback" from human review
+     * Output key: "executionResult"
      */
     interface ExecutionAgent {
         @SystemMessage("""
@@ -56,11 +63,14 @@ public interface HumanInLoopAgents {
             HUMAN FEEDBACK:
             {{feedback}}
             """)
+        @Agent(description = "Executes approved proposals with human feedback", outputKey = "executionResult")
         String execute(@V("proposal") String proposal, @V("feedback") String feedback);
     }
 
     /**
      * HoroscopeAgent: Generates horoscopes (used with human-in-loop for zodiac sign).
+     * Input: "sign" (may come from human input)
+     * Output key: "horoscope"
      */
     interface HoroscopeAgent {
         @SystemMessage("""
@@ -75,11 +85,13 @@ public interface HumanInLoopAgents {
             Make it feel personal and uplifting.
             """)
         @UserMessage("Generate a horoscope for {{sign}}:")
+        @Agent(description = "Generates personalized horoscopes for zodiac signs", outputKey = "horoscope")
         String generateHoroscope(@V("sign") String sign);
     }
 
     /**
      * ZodiacExtractor: Tries to extract zodiac sign from user input.
+     * Output key: "extractedSign" - may trigger human input if UNKNOWN
      */
     interface ZodiacExtractor {
         @SystemMessage("""
@@ -94,6 +106,16 @@ public interface HumanInLoopAgents {
             Sagittarius, Capricorn, Aquarius, Pisces
             """)
         @UserMessage("{{input}}")
+        @Agent(description = "Extracts zodiac sign from user input", outputKey = "extractedSign")
         String extract(@V("input") String input);
+    }
+
+    /**
+     * HoroscopeWorkflow: Typed interface for the human-in-the-loop workflow.
+     * The workflow pauses for human input when zodiac sign is unknown.
+     */
+    interface HoroscopeWorkflow {
+        @Agent
+        String getHoroscope(@V("input") String input);
     }
 }

@@ -1,13 +1,16 @@
 package com.matrixagents.agents;
 
+import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 /**
- * Agents for the GOAP (Goal-Oriented Action Planning) PATTERN.
+ * Agents for the GOAP (Goal-Oriented Action Planning) PATTERN using langchain4j-agentic module.
  * Demonstrates planning where agents are selected based on available state to achieve a goal.
  * Pattern: Planner analyzes goal -> Determines required agents -> Executes plan.
+ * 
+ * Uses @Agent annotation with state-based activation for goal-oriented workflows.
  */
 public interface GOAPAgents {
 
@@ -19,6 +22,7 @@ public interface GOAPAgents {
 
     /**
      * GoalPlanner: Analyzes the goal and determines the execution plan.
+     * Output key: "plan" - contains the execution sequence
      */
     interface GoalPlanner {
         @SystemMessage("""
@@ -47,11 +51,13 @@ public interface GOAPAgents {
             Current state:
             {{state}}
             """)
+        @Agent(description = "Creates execution plans to achieve goals", outputKey = "plan")
         String createPlan(@V("goal") String goal, @V("state") String state);
     }
 
     /**
      * PersonExtractor: Extracts person information from the prompt.
+     * Output key: "personInfo" - contains name and birthdate
      */
     interface PersonExtractor {
         @SystemMessage("""
@@ -63,11 +69,13 @@ public interface GOAPAgents {
             BIRTHDATE: [extracted date in YYYY-MM-DD format or "unknown"]
             """)
         @UserMessage("Extract person info from: {{prompt}}")
+        @Agent(description = "Extracts person information from text", outputKey = "personInfo")
         String extractPerson(@V("prompt") String prompt);
     }
 
     /**
      * SignExtractor: Determines zodiac sign from birth date.
+     * Output key: "signInfo" - contains sign, element, and ruling planet
      */
     interface SignExtractor {
         @SystemMessage("""
@@ -80,11 +88,13 @@ public interface GOAPAgents {
             PLANET: [ruling planet]
             """)
         @UserMessage("What zodiac sign is someone born on {{birthDate}}?")
+        @Agent(description = "Determines zodiac sign from birth date", outputKey = "signInfo")
         String determineSign(@V("birthDate") String birthDate);
     }
 
     /**
      * HoroscopeGenerator: Creates a horoscope for a zodiac sign.
+     * Output key: "horoscope"
      */
     interface HoroscopeGenerator {
         @SystemMessage("""
@@ -93,11 +103,13 @@ public interface GOAPAgents {
             Make it engaging and positive while feeling authentic.
             """)
         @UserMessage("Generate a horoscope for {{sign}} ({{element}} sign, ruled by {{planet}}):")
+        @Agent(description = "Generates horoscopes for zodiac signs", outputKey = "horoscope")
         String generateHoroscope(@V("sign") String sign, @V("element") String element, @V("planet") String planet);
     }
 
     /**
      * StoryFinder: Finds mythology and stories related to the zodiac sign.
+     * Output key: "mythology"
      */
     interface StoryFinder {
         @SystemMessage("""
@@ -107,11 +119,13 @@ public interface GOAPAgents {
             Keep it engaging and educational.
             """)
         @UserMessage("Tell me the mythology and stories behind {{sign}}:")
+        @Agent(description = "Finds mythology and stories for zodiac signs", outputKey = "mythology")
         String findStories(@V("sign") String sign);
     }
 
     /**
      * WriterAgent: Composes the final writeup from all gathered information.
+     * Output key: "writeup" - the final result
      */
     interface WriterAgent {
         @SystemMessage("""
@@ -138,7 +152,17 @@ public interface GOAPAgents {
             Mythology:
             {{mythology}}
             """)
+        @Agent(description = "Composes personalized astrology writeups", outputKey = "writeup")
         String compose(@V("personName") String personName, @V("sign") String sign,
                        @V("horoscope") String horoscope, @V("mythology") String mythology);
+    }
+
+    /**
+     * AstrologyWorkflow: Typed interface for the GOAP workflow.
+     * Uses goal-oriented planning to achieve personalized astrology writeup.
+     */
+    interface AstrologyWorkflow {
+        @Agent
+        String createAstrologyWriteup(@V("prompt") String prompt);
     }
 }

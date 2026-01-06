@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: matrix-agents-showcase
+  mvc:
+    async:
+      request-timeout: 300000
 
 # CORS configuration for React frontend
 cors:

@@ -1,20 +1,23 @@
 package com.matrixagents.agents;
 
+import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 /**
- * Agents for the P2P (Peer-to-Peer) PATTERN.
+ * Agents for the P2P (Peer-to-Peer) PATTERN using langchain4j-agentic module.
  * Demonstrates collaborative agent network where agents communicate as peers.
  * Pattern: Agents activate when their required inputs become available in shared state.
+ * 
+ * Uses @Agent annotation with state-based activation for peer collaboration.
  */
 public interface P2PAgents {
 
     /**
      * LiteratureAgent: Searches and summarizes relevant research.
      * Activates when: topic is available
-     * Produces: researchFindings
+     * Output key: "research"
      */
     interface LiteratureAgent {
         @SystemMessage("""
@@ -30,13 +33,14 @@ public interface P2PAgents {
             Be thorough but concise. Cite conceptual sources.
             """)
         @UserMessage("Research the current state of knowledge on: {{topic}}")
+        @Agent(description = "Researches and summarizes literature on a topic", outputKey = "research")
         String research(@V("topic") String topic);
     }
 
     /**
      * HypothesisAgent: Formulates hypotheses based on research.
-     * Activates when: researchFindings is available
-     * Produces: hypothesis
+     * Activates when: research is available
+     * Output key: "hypothesis"
      */
     interface HypothesisAgent {
         @SystemMessage("""
@@ -59,13 +63,14 @@ public interface P2PAgents {
             
             {{research}}
             """)
+        @Agent(description = "Formulates hypotheses based on research", outputKey = "hypothesis")
         String formulate(@V("research") String research);
     }
 
     /**
      * CriticAgent: Critiques hypotheses and identifies weaknesses.
      * Activates when: hypothesis is available
-     * Produces: critique
+     * Output key: "critique"
      */
     interface CriticAgent {
         @SystemMessage("""
@@ -89,13 +94,14 @@ public interface P2PAgents {
             
             {{hypothesis}}
             """)
+        @Agent(description = "Critiques hypotheses and identifies weaknesses", outputKey = "critique")
         String critique(@V("hypothesis") String hypothesis);
     }
 
     /**
      * ValidationAgent: Validates or reformulates based on critique.
      * Activates when: hypothesis AND critique are available
-     * Produces: validatedHypothesis
+     * Output key: "validation"
      */
     interface ValidationAgent {
         @SystemMessage("""
@@ -119,13 +125,14 @@ public interface P2PAgents {
             CRITIQUE:
             {{critique}}
             """)
+        @Agent(description = "Validates or reformulates hypotheses based on critique", outputKey = "validation")
         String validate(@V("hypothesis") String hypothesis, @V("critique") String critique);
     }
 
     /**
      * ScorerAgent: Scores the quality of the validated hypothesis.
-     * Activates when: validatedHypothesis is available
-     * Produces: score (0.0 - 1.0)
+     * Activates when: validation is available
+     * Output key: "score"
      */
     interface ScorerAgent {
         @SystemMessage("""
@@ -145,13 +152,14 @@ public interface P2PAgents {
             
             {{hypothesis}}
             """)
+        @Agent(description = "Scores the quality of hypotheses", outputKey = "score")
         String score(@V("hypothesis") String hypothesis);
     }
 
     /**
      * SynthesizerAgent: Creates the final research output from all peer contributions.
      * Activates when: all outputs are available (research, hypothesis, critique, validation, score)
-     * Produces: finalReport
+     * Output key: "report"
      */
     interface SynthesizerAgent {
         @SystemMessage("""
@@ -186,8 +194,18 @@ public interface P2PAgents {
             
             SCORE: {{score}}
             """)
+        @Agent(description = "Synthesizes research from all peer contributions", outputKey = "report")
         String synthesize(@V("research") String research, @V("hypothesis") String hypothesis,
                           @V("critique") String critique, @V("validation") String validation,
                           @V("score") String score);
+    }
+
+    /**
+     * ResearchWorkflow: Typed interface for the P2P collaborative workflow.
+     * Peers activate based on available state and collaborate towards research report.
+     */
+    interface ResearchWorkflow {
+        @Agent
+        String conductResearch(@V("topic") String topic);
     }
 }
