@@ -4,7 +4,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![Matrix Agents Screenshot](docs/screenshot.png)
 
-## 🎯 Features
+## Features
 
 - **8 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
@@ -12,7 +12,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 - **Matrix-themed UI** with Tailwind CSS
 - **Azure OpenAI** integration via LangChain4j
 
-## 📊 Patterns Demonstrated
+## Patterns Demonstrated
 
 ### Workflow Patterns (Deterministic Orchestration)
 | Pattern | Description | Topology |
@@ -34,7 +34,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 | **GOAP** | Goal-Oriented Action Planning | DAG |
 | **P2P** | Peer-to-peer decentralized coordination | Mesh |
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **Java 21** with Virtual Threads
@@ -50,7 +50,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 - **Tailwind CSS** for styling
 - **React Router** for navigation
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Java 21+
@@ -89,7 +89,7 @@ npm run dev
 
 The frontend will start on `http://localhost:5173`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 matrixagents/
@@ -121,7 +121,7 @@ matrixagents/
 └── pom.xml
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Azure OpenAI
 
@@ -143,7 +143,7 @@ Events are streamed via STOMP over SockJS:
 - **Subscribe**: `/topic/events/{executionId}`
 - **Send**: `/app/execute`
 
-## 📝 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -151,7 +151,7 @@ Events are streamed via STOMP over SockJS:
 | GET | `/api/patterns/{id}` | Get pattern details |
 | POST | `/api/patterns/{id}/execute` | Execute a pattern |
 
-## 🎨 UI Features
+## UI Features
 
 - **Real-time visualization** of agent execution
 - **Event log** with timestamped agent activities
@@ -159,11 +159,11 @@ Events are streamed via STOMP over SockJS:
 - **Animated D3 graphs** with agent highlighting
 - **Matrix-style** dark theme
 
-## 📜 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [LangChain4j](https://docs.langchain4j.dev/) - Java LLM framework
 - [Spring Boot](https://spring.io/projects/spring-boot) - Application framework
