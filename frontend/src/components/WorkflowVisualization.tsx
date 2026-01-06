@@ -48,10 +48,10 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
     svg.selectAll('*').remove()
 
     const { width, height } = dimensions
-    const padding = 60
+    const padding = 80
 
     // Create nodes from pattern agents
-    const nodes: Node[] = pattern.agents.map((agent, i) => ({
+    let nodes: Node[] = pattern.agents.map((agent, i) => ({
       id: agent,
       label: agent,
       status: completedAgents.has(agent) 
@@ -60,6 +60,24 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
           ? 'active' 
           : 'idle'
     }))
+
+    // For PARALLEL topology, add virtual start and combiner nodes if edges reference them
+    if (pattern.topology.type === 'PARALLEL') {
+      const edgeNodes = new Set<string>()
+      pattern.topology.edges.forEach((e: { from: string; to: string }) => {
+        edgeNodes.add(e.from)
+        edgeNodes.add(e.to)
+      })
+      const agentSet = new Set(pattern.agents)
+      
+      // Add virtual nodes that are referenced in edges but not in agents list
+      if (edgeNodes.has('start') && !agentSet.has('start')) {
+        nodes = [{ id: 'start', label: 'start', status: 'completed' as const }, ...nodes]
+      }
+      if (edgeNodes.has('combiner') && !agentSet.has('combiner')) {
+        nodes = [...nodes, { id: 'combiner', label: 'combiner', status: 'idle' as const }]
+      }
+    }
 
     // Position nodes based on topology
     const positionNodes = () => {
@@ -75,28 +93,40 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
           break
         
         case 'PARALLEL':
-          // Fan out and back in
-          if (nodes.length <= 2) {
-            nodes.forEach((node, i) => {
-              node.x = padding + (i * (width - 2 * padding))
-              node.y = centerY
-            })
-          } else {
-            const midNodes = nodes.slice(0, -1)
-            midNodes.forEach((node, i) => {
-              if (i === 0) {
+          // Check if we have start/combiner virtual nodes
+          const hasStart = nodes.some(n => n.id === 'start')
+          const hasCombiner = nodes.some(n => n.id === 'combiner')
+          const workerNodes = nodes.filter(n => n.id !== 'start' && n.id !== 'combiner')
+          
+          if (hasStart || hasCombiner) {
+            // Position start on left, workers in center vertically, combiner on right
+            const verticalSpacing = Math.min(80, (height - 2 * padding) / (workerNodes.length + 1))
+            const totalHeight = (workerNodes.length - 1) * verticalSpacing
+            const startY = centerY - totalHeight / 2
+            
+            nodes.forEach((node) => {
+              if (node.id === 'start') {
                 node.x = padding
                 node.y = centerY
+              } else if (node.id === 'combiner') {
+                node.x = width - padding
+                node.y = centerY
               } else {
-                const angle = ((i - 1) / (midNodes.length - 2)) * Math.PI - Math.PI / 2
-                node.x = centerX + Math.cos(angle) * 100
-                node.y = centerY + Math.sin(angle) * 80
+                const workerIndex = workerNodes.findIndex(n => n.id === node.id)
+                node.x = centerX
+                node.y = startY + workerIndex * verticalSpacing
               }
             })
-            if (nodes.length > 1) {
-              nodes[nodes.length - 1].x = width - padding
-              nodes[nodes.length - 1].y = centerY
-            }
+          } else {
+            // Just parallel agents, stack them vertically
+            const verticalSpacing = Math.min(80, (height - 2 * padding) / (nodes.length + 1))
+            const totalHeight = (nodes.length - 1) * verticalSpacing
+            const startY = centerY - totalHeight / 2
+            
+            nodes.forEach((node, i) => {
+              node.x = centerX
+              node.y = startY + i * verticalSpacing
+            })
           }
           break
         
