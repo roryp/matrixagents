@@ -290,8 +290,8 @@ public class PatternExecutionService {
 
     /**
      * CONDITIONAL PATTERN: Router -> Expert activation based on category
-     * Uses AgenticServices.sequenceBuilder() to combine CategoryRouter and ExpertRouterAgent.
-     * The sequence ensures both agents share the same AgenticScope.
+     * Uses fully declarative approach with @SequenceAgent composing @Agent (CategoryRouter) 
+     * and @ConditionalAgent (ExpertRouterAgent) with @ActivationCondition methods.
      */
     private ExecutionResult executeConditional(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -300,28 +300,18 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → ExpertRouterAgent (sequence with shared AgenticScope)")));
+            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → ExpertRouterAgent (fully declarative)")));
 
             scope.put("request", prompt);
             events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
 
-            // Build CategoryRouter agent with outputKey = "category"
-            CategoryRouter routerAgent = AgenticServices.agentBuilder(CategoryRouter.class)
-                    .chatModel(chatModel)
-                    .build();
-
-            // Build conditional expert router using createAgenticSystem
-            ExpertRouterAgent expertsAgent = AgenticServices.createAgenticSystem(ExpertRouterAgent.class, chatModel);
-
-            // Combine into a sequence - this ensures they share the same AgenticScope
-            // The CategoryRouter writes "category" to the scope, and ExpertRouterAgent reads it
-            ExpertChatbot expertChatbot = AgenticServices.sequenceBuilder(ExpertChatbot.class)
-                    .subAgents(routerAgent, expertsAgent)
-                    .outputKey("response")
-                    .build();
+            // Build the full declarative expert chatbot using createAgenticSystem
+            // ExpertChatbot is defined with @SequenceAgent combining CategoryRouter and ExpertRouterAgent
+            // CategoryRouter has @Agent outputKey="category", ExpertRouterAgent has @ConditionalAgent with @ActivationCondition
+            ExpertChatbot expertChatbot = AgenticServices.createAgenticSystem(ExpertChatbot.class, chatModel);
 
             events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
-            events.add(publishEvent(AgentEvent.agentInvoked("conditional", "expertsAgent", "Routing to appropriate expert...")));
+            events.add(publishEvent(AgentEvent.agentInvoked("conditional", "expertRouter", "Routing to appropriate expert...")));
 
             // Execute the full sequence
             String response = expertChatbot.ask(prompt);
