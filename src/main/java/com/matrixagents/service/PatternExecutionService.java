@@ -352,24 +352,28 @@ public class PatternExecutionService {
             events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "request", truncate(prompt))));
             events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "balances", bankTool.getAllBalances().toString())));
 
-            // Build sub-agents using AiServices.builder() with tools
-            WithdrawAgent withdrawAgent = AiServices.builder(WithdrawAgent.class)
+            // Build sub-agents using AgenticServices.agentBuilder() with tools
+            WithdrawAgent withdrawAgent = AgenticServices.agentBuilder(WithdrawAgent.class)
                     .chatModel(chatModel)
                     .tools(bankTool)
                     .build();
 
-            CreditAgent creditAgent = AiServices.builder(CreditAgent.class)
+            CreditAgent creditAgent = AgenticServices.agentBuilder(CreditAgent.class)
                     .chatModel(chatModel)
                     .tools(bankTool)
                     .build();
 
-            ExchangeAgent exchangeAgent = AiServices.builder(ExchangeAgent.class)
+            ExchangeAgent exchangeAgent = AgenticServices.agentBuilder(ExchangeAgent.class)
                     .chatModel(chatModel)
                     .tools(exchangeTool)
                     .build();
 
-            // Build supervisor using AgenticServices.createAgenticSystem() for declarative workflow
-            BankSupervisor supervisor = AiServices.builder(BankSupervisor.class).chatModel(plannerModel).build();
+            // Build supervisor using AgenticServices.supervisorBuilder() with sub-agents
+            SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
+                    .chatModel(plannerModel)
+                    .subAgents(withdrawAgent, creditAgent, exchangeAgent)
+                    .responseStrategy(SupervisorResponseStrategy.SUMMARY)
+                    .build();
 
             events.add(publishEvent(AgentEvent.agentInvoked("supervisor", "bankSupervisor", "Analyzing and coordinating request...")));
             
