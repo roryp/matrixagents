@@ -3,6 +3,7 @@ package com.matrixagents.agents;
 import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.agentic.declarative.ActivationCondition;
 import dev.langchain4j.agentic.declarative.ConditionalAgent;
+import dev.langchain4j.agentic.declarative.SequenceAgent;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
@@ -104,5 +105,16 @@ public interface ConditionalAgents {
         static boolean activateLegal(@V("category") RequestCategory category) {
             return category == RequestCategory.LEGAL;
         }
+    }
+
+    /**
+     * ExpertChatbot: Combines CategoryRouter and ExpertRouterAgent in a sequence.
+     * This is the typed interface for the full conditional workflow.
+     * The sequence ensures both agents share the same AgenticScope.
+     * Uses @SequenceAgent to declaratively compose CategoryRouter (classifier) with ExpertRouterAgent (conditional router).
+     */
+    interface ExpertChatbot {
+        @SequenceAgent(outputKey = "response", subAgents = {CategoryRouter.class, ExpertRouterAgent.class})
+        String ask(@V("request") String request);
     }
 }

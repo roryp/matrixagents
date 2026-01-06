@@ -290,7 +290,8 @@ public class PatternExecutionService {
 
     /**
      * CONDITIONAL PATTERN: Router -> Expert activation based on category
-     * Uses AgenticServices.conditionalBuilder() for routing to different agents based on classification.
+     * Uses AgenticServices.sequenceBuilder() to combine CategoryRouter and ExpertRouterAgent.
+     * The sequence ensures both agents share the same AgenticScope.
      */
     private ExecutionResult executeConditional(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -299,38 +300,34 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow using AgenticServices: Router → Expert activation")));
+            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → ExpertRouterAgent (sequence with shared AgenticScope)")));
 
             scope.put("request", prompt);
             events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
 
-            // Build router using AgenticServices.createAgenticSystem()
-            CategoryRouter router = AgenticServices.createAgenticSystem(CategoryRouter.class, chatModel);
+            // Build CategoryRouter agent with outputKey = "category"
+            CategoryRouter routerAgent = AgenticServices.agentBuilder(CategoryRouter.class)
+                    .chatModel(chatModel)
+                    .build();
 
-            // Classify the request using @Agent annotated router
+            // Build conditional expert router using createAgenticSystem
+            ExpertRouterAgent expertsAgent = AgenticServices.createAgenticSystem(ExpertRouterAgent.class, chatModel);
+
+            // Combine into a sequence - this ensures they share the same AgenticScope
+            // The CategoryRouter writes "category" to the scope, and ExpertRouterAgent reads it
+            ExpertChatbot expertChatbot = AgenticServices.sequenceBuilder(ExpertChatbot.class)
+                    .subAgents(routerAgent, expertsAgent)
+                    .outputKey("response")
+                    .build();
+
             events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
-            RequestCategory category = router.classify(prompt);
-            scope.put("category", category);
-            events.add(publishEvent(AgentEvent.agentCompleted("conditional", "categoryRouter", "Category: " + category)));
-            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category.toString())));
+            events.add(publishEvent(AgentEvent.agentInvoked("conditional", "expertsAgent", "Routing to appropriate expert...")));
 
-            // Build conditional agent using AgenticServices.createAgenticSystem() for declarative workflow
-            ExpertRouterAgent expertRouter = AgenticServices.createAgenticSystem(ExpertRouterAgent.class, chatModel);
+            // Execute the full sequence
+            String response = expertChatbot.ask(prompt);
 
-            // Route to appropriate expert based on category
-            String expertName = switch (category) {
-                case MEDICAL -> "medicalExpert";
-                case LEGAL -> "legalExpert";
-                case TECHNICAL -> "technicalExpert";
-                case UNKNOWN -> "generalExpert";
-            };
-            events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Consulting " + expertName + "...")));
-
-            String response = expertRouter.askExpert(prompt);
-
-            scope.put("expertUsed", expertName);
             scope.put("response", response);
-            events.add(publishEvent(AgentEvent.agentCompleted("conditional", expertName, truncate(response))));
+            events.add(publishEvent(AgentEvent.agentCompleted("conditional", "expertChatbot", truncate(response))));
 
             events.add(publishEvent(AgentEvent.completed("conditional", response)));
             return ExecutionResult.success(executionId, "conditional", response, events, scope, startTime);
