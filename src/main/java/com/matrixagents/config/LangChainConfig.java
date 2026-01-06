@@ -19,6 +19,9 @@ public class LangChainConfig {
     @Value("${AZURE_OPENAI_DEPLOYMENT:gpt-5}")
     private String deploymentName;
 
+    @Value("${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:text-embedding-3-small}")
+    private String embeddingDeploymentName;
+
     @Bean
     @Primary
     public ChatModel chatModel() {
