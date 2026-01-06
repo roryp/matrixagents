@@ -1,21 +1,27 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Send, MessageSquare } from 'lucide-react'
+import { Send, MessageSquare, Loader2 } from 'lucide-react'
 
 interface HumanInputModalProps {
   requestId: string
   prompt: string
-  onSubmit: (input: string) => void
+  onSubmit: (input: string) => Promise<void> | void
   onCancel: () => void
 }
 
 export default function HumanInputModal({ requestId, prompt, onSubmit, onCancel }: HumanInputModalProps) {
   const [input, setInput] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (input.trim()) {
-      onSubmit(input.trim())
+    if (input.trim() && !isSubmitting) {
+      setIsSubmitting(true)
+      try {
+        await onSubmit(input.trim())
+      } finally {
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -65,11 +71,20 @@ export default function HumanInputModal({ requestId, prompt, onSubmit, onCancel 
             </button>
             <button
               type="submit"
-              disabled={!input.trim()}
+              disabled={!input.trim() || isSubmitting}
               className="matrix-btn rounded flex items-center gap-2"
             >
-              <Send className="w-4 h-4" />
-              Submit Response
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Submit Response
+                </>
+              )}
             </button>
           </div>
         </form>

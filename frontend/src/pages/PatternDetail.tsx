@@ -31,6 +31,7 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
   const [localEvents, setLocalEvents] = useState<AgentEvent[]>([])
   const [scope, setScope] = useState<Record<string, unknown>>({})
   const [humanInputRequest, setHumanInputRequest] = useState<{ requestId: string; prompt: string } | null>(null)
+  const [handledRequestIds, setHandledRequestIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'visualization' | 'events' | 'scope'>('visualization')
 
   const { events: wsEvents, subscribe, clearEvents } = useWebSocket()
@@ -55,12 +56,15 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
           setScope(prev => ({ ...prev, [key]: value }))
         }
         
-        // Check for human input request
+        // Check for human input request (only if not already handled)
         if (event.eventType === 'HUMAN_INPUT_REQUIRED') {
-          setHumanInputRequest({
-            requestId: event.data.requestId as string,
-            prompt: event.message
-          })
+          const requestId = event.data.requestId as string
+          if (!handledRequestIds.has(requestId)) {
+            setHumanInputRequest({
+              requestId,
+              prompt: event.message
+            })
+          }
         }
       })
     }
@@ -90,6 +94,7 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
     setResult(null)
     setLocalEvents([])
     setScope({})
+    setHandledRequestIds(new Set())
     clearEvents()
 
     try {
@@ -110,7 +115,9 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
 
   const handleHumanInput = async (input: string) => {
     if (humanInputRequest) {
-      await provideHumanInput(humanInputRequest.requestId, input)
+      const requestId = humanInputRequest.requestId
+      await provideHumanInput(requestId, input)
+      setHandledRequestIds(prev => new Set(prev).add(requestId))
       setHumanInputRequest(null)
     }
   }
