@@ -63,6 +63,7 @@ public interface ParallelAgents {
      * Uses @Output to combine results into EveningPlan list.
      */
     interface EveningPlannerAgent {
+        @UserMessage("Plan an evening based on mood: {{mood}}")
         @ParallelAgent(outputKey = "plans", subAgents = {FoodExpert.class, MovieExpert.class})
         List<EveningPlan> plan(@V("mood") String mood);
 

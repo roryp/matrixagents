@@ -18,6 +18,7 @@ import com.matrixagents.agents.P2PAgents;
 import com.matrixagents.agents.P2PAgents.*;
 import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
+import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -163,7 +164,7 @@ public class PatternExecutionService {
 
             // Build parallel agents using createAgenticSystem for declarative API
             // EveningPlannerAgent uses @ParallelAgent annotation with subAgents declared
-            EveningPlannerAgent planner = AiServices.builder(EveningPlannerAgent.class).chatModel(chatModel).build();
+            EveningPlannerAgent planner = AgenticServices.createAgenticSystem(EveningPlannerAgent.class, chatModel);
 
             // Execute parallel agents - both FoodExpert and MovieExpert run concurrently
             events.add(publishEvent(AgentEvent.agentInvoked("parallel", "foodExpert", "Suggesting meals for " + mood + " mood...")));
@@ -303,10 +304,8 @@ public class PatternExecutionService {
             scope.put("request", prompt);
             events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
 
-            // Build router using AiServices.builder()
-            CategoryRouter router = AiServices.builder(CategoryRouter.class)
-                    .chatModel(chatModel)
-                    .build();
+            // Build router using AgenticServices.createAgenticSystem()
+            CategoryRouter router = AgenticServices.createAgenticSystem(CategoryRouter.class, chatModel);
 
             // Classify the request using @Agent annotated router
             events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
@@ -316,7 +315,7 @@ public class PatternExecutionService {
             events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category.toString())));
 
             // Build conditional agent using AgenticServices.createAgenticSystem() for declarative workflow
-            ExpertRouterAgent expertRouter = AiServices.builder(ExpertRouterAgent.class).chatModel(chatModel).build();
+            ExpertRouterAgent expertRouter = AgenticServices.createAgenticSystem(ExpertRouterAgent.class, chatModel);
 
             // Route to appropriate expert based on category
             String expertName = switch (category) {
