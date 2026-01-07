@@ -347,7 +347,7 @@ agenticScope.readState("withdrawResult");  // Access internal state
 ```env
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o
+AZURE_OPENAI_DEPLOYMENT=gpt-5
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 ```
 
@@ -404,7 +404,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
    This will create:
    - Azure Resource Group
    - Azure Container Registry
-   - Azure OpenAI with gpt-5-nano (fastest) and text-embedding-3-small deployments
+   - Azure OpenAI with gpt-5-mini and text-embedding-3-small deployments
    - Azure Container Apps Environment
    - Azure Container App (auto-scaling 1-3 replicas)
    - Log Analytics Workspace + Application Insights
@@ -428,7 +428,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
 │                           │ └────────────────────────┘   │  │
 │  ┌──────────────────┐     └──────────────────────────────┘  │
 │  │ Azure OpenAI     │                │                      │
-│  │ - gpt-5-nano     │◀───────────────┘                      │
+│  │ - gpt-5-mini     │◀───────────────┘                      │
 │  │ - text-embedding │                                       │
 │  └──────────────────┘     ┌──────────────────────────────┐  │
 │                           │ Monitoring                   │  │
@@ -487,7 +487,7 @@ The application reads Azure OpenAI configuration from a `.env` file in the proje
 |----------|-------------|---------|
 | `AZURE_OPENAI_ENDPOINT` | Your Azure OpenAI resource endpoint | `https://your-resource.openai.azure.com/` |
 | `AZURE_OPENAI_API_KEY` | Your Azure OpenAI API key | `your-api-key` |
-| `AZURE_OPENAI_DEPLOYMENT` | Chat model deployment name | `gpt-4o` |
+| `AZURE_OPENAI_DEPLOYMENT` | Chat model deployment name | `gpt-5` |
 | `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | Embedding model deployment name | `text-embedding-3-small` |
 
 ### Azure OpenAI
