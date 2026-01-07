@@ -1,15 +1,15 @@
-# Matrix Agents - LangChain4j Agentic Patterns Showcase
+# AI Agents - LangChain4j Agentic Patterns Showcase
 
 A showcase application demonstrating **8 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.
 
-![Matrix Agents Screenshot](docs/screenshot.png)
+![AI Agents Screenshot](docs/screenshot.png)
 
 ## Features
 
 - **8 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
 - **D3.js** animated topology graphs
-- **Matrix-themed UI** with Tailwind CSS
+- **Dark-themed UI** with Tailwind CSS
 - **Azure OpenAI** integration via LangChain4j
 
 ## Patterns Demonstrated
@@ -423,7 +423,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
 │  ┌──────────────────┐     ┌──────────────────────────────┐  │
 │  │ Container        │     │ Container Apps Environment   │  │
 │  │ Registry         │────▶│ ┌────────────────────────┐   │  │
-│  │                  │     │ │ Matrix Agents App      │   │  │
+│  │                  │     │ │ AI Agents App          │   │  │
 │  └──────────────────┘     │ │ (Java 21 + React)      │   │  │
 │                           │ └────────────────────────┘   │  │
 │  ┌──────────────────┐     └──────────────────────────────┘  │
@@ -524,7 +524,7 @@ Events are streamed via STOMP over SockJS:
 - **Event log** with timestamped agent activities
 - **Scope view** showing shared state
 - **Animated D3 graphs** with agent highlighting
-- **Matrix-style** dark theme
+- **Dark-themed** interface
 
 ## License
 
