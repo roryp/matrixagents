@@ -1,12 +1,12 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { Client } from '@stomp/stompjs'
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from 'react'
+import { Client, StompSubscription } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 import { AgentEvent } from '../types'
 
 interface WebSocketContextType {
   connected: boolean
   events: AgentEvent[]
-  subscribe: (patternId: string) => void
+  subscribe: (patternId: string | null) => void
   unsubscribe: () => void
   clearEvents: () => void
 }
@@ -14,10 +14,22 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null)
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const [client, setClient] = useState<Client | null>(null)
   const [connected, setConnected] = useState(false)
   const [events, setEvents] = useState<AgentEvent[]>([])
   const [currentSubscription, setCurrentSubscription] = useState<string | null>(null)
+  const subscriptionRef = useRef<StompSubscription | null>(null)
+
+  // Handler for incoming events - deduplicate by eventId
+  const handleEvent = useCallback((message: { body: string }) => {
+    const event = JSON.parse(message.body) as AgentEvent
+    setEvents(prev => {
+      // Deduplicate: check if event with same eventId already exists
+      if (event.eventId && prev.some(e => e.eventId === event.eventId)) {
+        return prev
+      }
+      return [...prev, event]
+    })
+  }, [])
 
   useEffect(() => {
     // Dynamically determine WebSocket URL based on current location
@@ -34,11 +46,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         console.log('WebSocket connected')
         setConnected(true)
         
-        // Subscribe to global events
-        stompClient.subscribe('/topic/events', (message) => {
-          const event = JSON.parse(message.body) as AgentEvent
-          setEvents(prev => [...prev, event])
-        })
+        // Subscribe to global events only (pattern-specific subscription is handled separately)
+        subscriptionRef.current = stompClient.subscribe('/topic/events', handleEvent)
       },
       onDisconnect: () => {
         console.log('WebSocket disconnected')
@@ -50,30 +59,28 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     })
 
     stompClient.activate()
-    setClient(stompClient)
 
     return () => {
       stompClient.deactivate()
     }
+  }, [handleEvent])
+
+  const subscribe = useCallback((patternId: string | null) => {
+    // Pattern-specific subscription is now handled via filtering on the client side
+    // The global /topic/events subscription receives all events
+    // We just track which pattern we're interested in for potential future use
+    if (patternId !== currentSubscription) {
+      setCurrentSubscription(patternId)
+    }
+  }, [currentSubscription])
+
+  const unsubscribe = useCallback(() => {
+    setCurrentSubscription(null)
   }, [])
 
-  const subscribe = (patternId: string) => {
-    if (client && connected && patternId !== currentSubscription) {
-      setCurrentSubscription(patternId)
-      client.subscribe(`/topic/patterns/${patternId}`, (message) => {
-        const event = JSON.parse(message.body) as AgentEvent
-        setEvents(prev => [...prev, event])
-      })
-    }
-  }
-
-  const unsubscribe = () => {
-    setCurrentSubscription(null)
-  }
-
-  const clearEvents = () => {
+  const clearEvents = useCallback(() => {
     setEvents([])
-  }
+  }, [])
 
   return (
     <WebSocketContext.Provider value={{ connected, events, subscribe, unsubscribe, clearEvents }}>
