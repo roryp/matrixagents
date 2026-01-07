@@ -43,7 +43,7 @@ resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-5-nano'
+      name: 'gpt-4o-mini'
       version: modelVersion
     }
     raiPolicyName: 'Microsoft.DefaultV2'
