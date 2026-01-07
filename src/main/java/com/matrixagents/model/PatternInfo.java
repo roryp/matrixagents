@@ -18,12 +18,12 @@ public record PatternInfo(
             "Sequential Workflow",
             "Agents are invoked one after another in a predefined order. Each agent's output can be used as input for the next.",
             "workflow",
-            List.of("researcher", "analyzer", "writer"),
+            List.of("CreativeWriter", "AudienceEditor", "StyleEditor"),
             Map.of("type", "SEQUENCE", "edges", List.of(
-                Map.of("from", "researcher", "to", "analyzer"),
-                Map.of("from", "analyzer", "to", "writer")
+                Map.of("from", "CreativeWriter", "to", "AudienceEditor"),
+                Map.of("from", "AudienceEditor", "to", "StyleEditor")
             )),
-            "Write a comprehensive article about quantum computing"
+            "Write a fantasy story for teenagers in a humorous style"
         );
     }
 
@@ -33,16 +33,14 @@ public record PatternInfo(
             "Parallel Workflow",
             "Multiple agents are invoked simultaneously, and their results are combined. Great for gathering diverse perspectives.",
             "workflow",
-            List.of("techExpert", "businessExpert", "creativeExpert"),
+            List.of("FoodExpert", "MovieExpert"),
             Map.of("type", "PARALLEL", "edges", List.of(
-                Map.of("from", "start", "to", "techExpert"),
-                Map.of("from", "start", "to", "businessExpert"),
-                Map.of("from", "start", "to", "creativeExpert"),
-                Map.of("from", "techExpert", "to", "combiner"),
-                Map.of("from", "businessExpert", "to", "combiner"),
-                Map.of("from", "creativeExpert", "to", "combiner")
+                Map.of("from", "start", "to", "FoodExpert"),
+                Map.of("from", "start", "to", "MovieExpert"),
+                Map.of("from", "FoodExpert", "to", "combiner"),
+                Map.of("from", "MovieExpert", "to", "combiner")
             )),
-            "Analyze the impact of AI on the job market"
+            "Plan a romantic evening with movie and meal suggestions"
         );
     }
 
@@ -52,13 +50,13 @@ public record PatternInfo(
             "Loop Workflow",
             "Agents iterate until an exit condition is met. Perfect for refinement and quality improvement cycles.",
             "workflow",
-            List.of("generator", "critic", "refiner"),
+            List.of("CreativeWriter", "StyleScorer", "StyleEditor"),
             Map.of("type", "LOOP", "maxIterations", 5, "edges", List.of(
-                Map.of("from", "generator", "to", "critic"),
-                Map.of("from", "critic", "to", "refiner"),
-                Map.of("from", "refiner", "to", "generator", "label", "iterate")
+                Map.of("from", "CreativeWriter", "to", "StyleScorer"),
+                Map.of("from", "StyleScorer", "to", "StyleEditor"),
+                Map.of("from", "StyleEditor", "to", "StyleScorer", "label", "iterate")
             )),
-            "Create a perfect elevator pitch for a startup"
+            "Write a story about dragons in a Shakespearean style"
         );
     }
 
@@ -68,11 +66,11 @@ public record PatternInfo(
             "Conditional Routing",
             "Routes to different agents based on runtime conditions. Enables domain-specific expert selection.",
             "workflow",
-            List.of("router", "medicalExpert", "legalExpert", "techExpert"),
+            List.of("CategoryRouter", "MedicalExpert", "LegalExpert", "TechnicalExpert"),
             Map.of("type", "CONDITIONAL", "edges", List.of(
-                Map.of("from", "router", "to", "medicalExpert", "condition", "medical"),
-                Map.of("from", "router", "to", "legalExpert", "condition", "legal"),
-                Map.of("from", "router", "to", "techExpert", "condition", "technical")
+                Map.of("from", "CategoryRouter", "to", "MedicalExpert", "condition", "MEDICAL"),
+                Map.of("from", "CategoryRouter", "to", "LegalExpert", "condition", "LEGAL"),
+                Map.of("from", "CategoryRouter", "to", "TechnicalExpert", "condition", "TECHNICAL")
             )),
             "What are the symptoms of diabetes and available treatments?"
         );
@@ -84,13 +82,13 @@ public record PatternInfo(
             "Supervisor Agent",
             "An LLM-based supervisor autonomously plans and orchestrates sub-agents to complete complex tasks.",
             "agentic",
-            List.of("supervisor", "researcher", "calculator", "writer"),
+            List.of("BankSupervisor", "WithdrawAgent", "CreditAgent", "ExchangeAgent"),
             Map.of("type", "STAR", "edges", List.of(
-                Map.of("from", "supervisor", "to", "researcher"),
-                Map.of("from", "supervisor", "to", "calculator"),
-                Map.of("from", "supervisor", "to", "writer")
+                Map.of("from", "BankSupervisor", "to", "WithdrawAgent"),
+                Map.of("from", "BankSupervisor", "to", "CreditAgent"),
+                Map.of("from", "BankSupervisor", "to", "ExchangeAgent")
             )),
-            "Research current stock prices for AAPL and MSFT, calculate their average, and write a brief analysis"
+            "Transfer 100 USD from Mario to Georgios, then convert 50 USD to EUR"
         );
     }
 
@@ -100,12 +98,12 @@ public record PatternInfo(
             "Human-in-the-Loop",
             "Pauses workflow execution to request human input or approval before proceeding.",
             "agentic",
-            List.of("proposer", "human", "executor"),
+            List.of("ProposalAgent", "Human", "ExecutionAgent"),
             Map.of("type", "SEQUENCE", "hasHuman", true, "edges", List.of(
-                Map.of("from", "proposer", "to", "human"),
-                Map.of("from", "human", "to", "executor")
+                Map.of("from", "ProposalAgent", "to", "Human"),
+                Map.of("from", "Human", "to", "ExecutionAgent")
             )),
-            "Draft and send an important email to the CEO"
+            "Create a proposal for reorganizing the team structure"
         );
     }
 
@@ -115,14 +113,16 @@ public record PatternInfo(
             "Goal-Oriented Planning (GOAP)",
             "Calculates the shortest path through agent dependencies to achieve a goal efficiently.",
             "planning",
-            List.of("dataCollector", "analyzer", "visualizer", "reporter"),
+            List.of("GoalPlanner", "PersonExtractor", "SignExtractor", "HoroscopeGenerator", "StoryFinder", "WriterAgent"),
             Map.of("type", "GOAP", "edges", List.of(
-                Map.of("from", "dataCollector", "to", "analyzer"),
-                Map.of("from", "analyzer", "to", "visualizer"),
-                Map.of("from", "analyzer", "to", "reporter"),
-                Map.of("from", "visualizer", "to", "reporter")
+                Map.of("from", "GoalPlanner", "to", "PersonExtractor"),
+                Map.of("from", "PersonExtractor", "to", "SignExtractor"),
+                Map.of("from", "SignExtractor", "to", "HoroscopeGenerator"),
+                Map.of("from", "SignExtractor", "to", "StoryFinder"),
+                Map.of("from", "HoroscopeGenerator", "to", "WriterAgent"),
+                Map.of("from", "StoryFinder", "to", "WriterAgent")
             )),
-            "Generate a comprehensive sales report with visualizations"
+            "Generate a personalized horoscope and mythology for someone born on March 15th"
         );
     }
 
@@ -132,13 +132,15 @@ public record PatternInfo(
             "Peer-to-Peer (P2P)",
             "Decentralized agent coordination where agents react to state changes and collaborate autonomously.",
             "planning",
-            List.of("ideaGenerator", "critic", "validator", "scorer"),
+            List.of("LiteratureAgent", "HypothesisAgent", "CriticAgent", "ValidationAgent", "ScorerAgent", "SynthesizerAgent"),
             Map.of("type", "P2P", "edges", List.of(
-                Map.of("from", "ideaGenerator", "to", "critic", "bidirectional", true),
-                Map.of("from", "critic", "to", "validator", "bidirectional", true),
-                Map.of("from", "validator", "to", "scorer", "bidirectional", true)
+                Map.of("from", "LiteratureAgent", "to", "HypothesisAgent"),
+                Map.of("from", "HypothesisAgent", "to", "CriticAgent"),
+                Map.of("from", "CriticAgent", "to", "ValidationAgent"),
+                Map.of("from", "ValidationAgent", "to", "ScorerAgent"),
+                Map.of("from", "ScorerAgent", "to", "SynthesizerAgent")
             )),
-            "Brainstorm and validate innovative solutions for climate change"
+            "Research the effects of caffeine on cognitive performance"
         );
     }
 
