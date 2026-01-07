@@ -4,6 +4,17 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
+## Table of Contents
+
+- [Features](#features)
+- [Patterns Demonstrated](#patterns-demonstrated)
+- [Quick Start](#getting-started)
+- [Azure Deployment](#azure-deployment)
+- [Beginner's Guide to Agentic Patterns](#beginners-guide-to-agentic-patterns)
+- [Technical Architecture](#technical-architecture)
+- [API Reference](#api-endpoints)
+- [License](#license)
+
 ## Features
 
 - **8 Agentic Patterns** with interactive visualizations
