@@ -19,7 +19,7 @@ export default function Layout({ children }: LayoutProps) {
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <Cpu className="w-8 h-8 text-matrix-primary" />
               <div>
-                <h1 className="text-xl font-bold glow-text">MATRIX AGENTS</h1>
+                <h1 className="text-xl font-bold glow-text">AI AGENTS</h1>
                 <p className="text-xs text-matrix-secondary">LangChain4j Agentic Patterns</p>
               </div>
             </Link>

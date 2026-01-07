@@ -22,7 +22,7 @@ function App() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl font-bold glow-text mb-4">MATRIX AGENTS</div>
+          <div className="text-4xl font-bold glow-text mb-4">AI AGENTS</div>
           <div className="text-matrix-secondary">Initializing system...</div>
         </div>
       </div>
