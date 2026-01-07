@@ -16,7 +16,7 @@ public class LangChainConfig {
     @Value("${azure.openai.endpoint:}")
     private String endpoint;
 
-    @Value("${azure.openai.deployment:gpt-5-mini}")
+    @Value("${azure.openai.deployment:gpt-5-nano}")
     private String deploymentName;
 
     @Value("${azure.openai.embedding-deployment:text-embedding-3-small}")

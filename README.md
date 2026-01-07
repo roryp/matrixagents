@@ -404,7 +404,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
    This will create:
    - Azure Resource Group
    - Azure Container Registry
-   - Azure OpenAI with gpt-5-mini and text-embedding-3-small deployments
+   - Azure OpenAI with gpt-5-nano (fastest) and text-embedding-3-small deployments
    - Azure Container Apps Environment
    - Azure Container App (auto-scaling 1-3 replicas)
    - Log Analytics Workspace + Application Insights
@@ -428,7 +428,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
 │                           │ └────────────────────────┘   │  │
 │  ┌──────────────────┐     └──────────────────────────────┘  │
 │  │ Azure OpenAI     │                │                      │
-│  │ - gpt-5-mini     │◀───────────────┘                      │
+│  │ - gpt-5-nano     │◀───────────────┘                      │
 │  │ - text-embedding │                                       │
 │  └──────────────────┘     ┌──────────────────────────────┐  │
 │                           │ Monitoring                   │  │
