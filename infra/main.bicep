@@ -10,10 +10,10 @@ param environmentName string
 param location string
 
 @description('Azure OpenAI model deployment name')
-param openAiModelDeployment string = 'gpt-4o-mini'
+param openAiModelDeployment string = 'gpt-5-mini'
 
 @description('Azure OpenAI model version')
-param openAiModelVersion string = '2024-07-18'
+param openAiModelVersion string = '2025-08-07'
 
 @description('Azure OpenAI embedding model deployment name')
 param openAiEmbeddingDeployment string = 'text-embedding-3-small'
