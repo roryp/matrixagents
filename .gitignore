@@ -59,3 +59,5 @@ logs/
 tmp/
 temp/
 request.json
+.azure
+next-steps.md

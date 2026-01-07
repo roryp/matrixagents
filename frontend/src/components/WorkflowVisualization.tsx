@@ -51,7 +51,7 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
     const padding = 80
 
     // Create nodes from pattern agents
-    let nodes: Node[] = pattern.agents.map((agent, i) => ({
+    let nodes: Node[] = pattern.agents.map((agent) => ({
       id: agent,
       label: agent,
       status: completedAgents.has(agent) 

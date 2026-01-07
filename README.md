@@ -375,6 +375,76 @@ npm run dev
 
 The frontend will start on `http://localhost:5173`
 
+## Azure Deployment
+
+This application includes full Azure infrastructure-as-code for one-click deployment using the Azure Developer CLI (azd).
+
+### Prerequisites
+- [Azure Developer CLI (azd)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
+- [Azure subscription](https://azure.microsoft.com/free/)
+- [Docker](https://docs.docker.com/get-docker/) (for container builds)
+
+### Deploy to Azure
+
+1. **Login to Azure**
+   ```bash
+   azd auth login
+   ```
+
+2. **Initialize environment** (first time only)
+   ```bash
+   azd init
+   ```
+
+3. **Provision infrastructure and deploy**
+   ```bash
+   azd up
+   ```
+
+   This will create:
+   - Azure Resource Group
+   - Azure Container Registry
+   - Azure OpenAI with gpt-5-mini and text-embedding-3-small deployments
+   - Azure Container Apps Environment
+   - Azure Container App (auto-scaling 1-3 replicas)
+   - Log Analytics Workspace + Application Insights
+
+4. **Access your app**
+   
+   After deployment, the Container App URL will be displayed in the terminal output.
+
+### Azure Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Azure Resource Group                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────┐     ┌──────────────────────────────┐  │
+│  │ Container        │     │ Container Apps Environment   │  │
+│  │ Registry         │────▶│ ┌────────────────────────┐   │  │
+│  │                  │     │ │ Matrix Agents App      │   │  │
+│  └──────────────────┘     │ │ (Java 21 + React)      │   │  │
+│                           │ └────────────────────────┘   │  │
+│  ┌──────────────────┐     └──────────────────────────────┘  │
+│  │ Azure OpenAI     │                │                      │
+│  │ - gpt-5-mini     │◀───────────────┘                      │
+│  │ - text-embedding │                                       │
+│  └──────────────────┘     ┌──────────────────────────────┐  │
+│                           │ Monitoring                   │  │
+│                           │ - Log Analytics              │  │
+│                           │ - Application Insights       │  │
+│                           └──────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Clean Up Resources
+
+To delete all Azure resources:
+```bash
+azd down
+```
+
 ## Project Structure
 
 ```

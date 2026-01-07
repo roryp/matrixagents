@@ -20,8 +20,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [currentSubscription, setCurrentSubscription] = useState<string | null>(null)
 
   useEffect(() => {
+    // Dynamically determine WebSocket URL based on current location
+    const wsProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+    const wsHost = window.location.host
+    const wsUrl = `${wsProtocol}//${wsHost}/ws`
+
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,

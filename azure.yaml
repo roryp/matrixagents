@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: matrixagents
+metadata:
+  template: azd-init@1.22.5
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  api:
+    project: .
+    host: containerapp
+    language: java
+    docker:
+      path: Dockerfile
+
+hooks:
+  preprovision:
+    shell: pwsh
+    run: |
+      Write-Host "Preparing to provision Matrix Agents infrastructure..."
+
+  predeploy:
+    shell: pwsh
+    run: |
+      Write-Host "Building frontend..."
+      Push-Location frontend
+      npm install
+      npm run build
+      Pop-Location
+      Write-Host "Frontend build complete."

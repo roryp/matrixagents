@@ -19,7 +19,7 @@ export default function ScopeInspector({ scope }: ScopeInspectorProps) {
     setExpanded(newExpanded)
   }
 
-  const renderValue = (value: unknown, key: string, depth: number = 0): JSX.Element => {
+  const renderValue = (value: unknown, key: string, _depth: number = 0): JSX.Element => {
     if (value === null) {
       return <span className="text-gray-500">null</span>
     }
