@@ -76,8 +76,8 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 **When to use:** When each step depends on the previous step's output.
 
-**Example prompt:** *"Write a blog post about renewable energy"*
-- creativeWriter → audienceEditor → styleEditor
+**Example prompt:** *"Write a fantasy story for teenagers in a humorous style"*
+- CreativeWriter → AudienceEditor → StyleEditor
 
 ---
 
@@ -143,8 +143,8 @@ These patterns use **LLM intelligence** to decide how agents interact.
 
 **When to use:** Complex tasks requiring multiple skills.
 
-**Example prompt:** *"Research Tesla stock and calculate if I should invest $10,000"*
-- Supervisor delegates to: researcher, calculator, writer
+**Example prompt:** *"Transfer 100 USD from Mario to Georgios, then convert 50 USD to EUR"*
+- BankSupervisor delegates to: WithdrawAgent, CreditAgent, ExchangeAgent
 
 ---
 
@@ -180,8 +180,8 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 **When to use:** Complex goals with many possible paths.
 
-**Example prompt:** *"Create a comprehensive market analysis report"*
-- GOAP calculates: dataCollector → analyzer → visualizer → reporter
+**Example prompt:** *"Generate a personalized horoscope for someone born on March 15th"*
+- GOAP calculates: GoalPlanner → PersonExtractor → SignExtractor → HoroscopeGenerator → WriterAgent
 
 ---
 
