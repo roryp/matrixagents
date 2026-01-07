@@ -229,7 +229,8 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
       .attr('marker-end', 'url(#arrowhead)')
       .style('filter', d => d.active ? 'url(#glow)' : 'none')
 
-    // Draw edge labels
+    // Draw edge labels - positioned at 40% from source toward target
+    // with perpendicular offset to avoid overlap with edge lines
     svg.selectAll('.edge-label')
       .data(edges.filter(e => e.label))
       .enter()
@@ -238,16 +239,25 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
       .attr('x', d => {
         const s = nodeMap.get(d.source)
         const t = nodeMap.get(d.target)
-        return ((s?.x || 0) + (t?.x || 0)) / 2
+        const sx = s?.x || 0
+        const tx = t?.x || 0
+        // Position at 40% from source toward target (closer to center)
+        return sx + (tx - sx) * 0.40
       })
       .attr('y', d => {
         const s = nodeMap.get(d.source)
         const t = nodeMap.get(d.target)
-        return ((s?.y || 0) + (t?.y || 0)) / 2 - 10
+        const sy = s?.y || 0
+        const ty = t?.y || 0
+        // Position at 40% from source toward target
+        // Add vertical offset to be above/below the edge line
+        const midY = sy + (ty - sy) * 0.40
+        return midY - 8
       })
       .attr('text-anchor', 'middle')
-      .attr('fill', '#008f11')
+      .attr('fill', '#00cc33')
       .attr('font-size', '10px')
+      .attr('font-weight', 'bold')
       .text(d => d.label || '')
 
     // Draw nodes
@@ -265,7 +275,7 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
         switch (d.status) {
           case 'active': return '#003b00'
           case 'completed': return '#004d00'
-          default: return '#1a1a2e'
+          default: return '#0a2010'
         }
       })
       .attr('stroke', d => {
@@ -273,10 +283,10 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
           case 'active': return '#00ff41'
           case 'completed': return '#00ff41'
           case 'error': return '#ff4141'
-          default: return '#008f11'
+          default: return '#00ff41'
         }
       })
-      .attr('stroke-width', d => d.status === 'active' ? 3 : 2)
+      .attr('stroke-width', 3)
       .style('filter', d => d.status === 'active' ? 'url(#glow)' : 'none')
 
     // Status indicator
@@ -289,7 +299,7 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
           case 'active': return '#00ff41'
           case 'completed': return '#00cc33'
           case 'error': return '#ff4141'
-          default: return '#333'
+          default: return '#006622'
         }
       })
       .style('filter', d => d.status === 'active' ? 'url(#glow)' : 'none')
@@ -298,7 +308,7 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
     nodeGroups.append('text')
       .attr('text-anchor', 'middle')
       .attr('dy', 40)
-      .attr('fill', d => d.status === 'active' ? '#00ff41' : '#008f11')
+      .attr('fill', d => d.status === 'active' ? '#00ff41' : '#00ff41')
       .attr('font-size', '11px')
       .attr('font-family', 'JetBrains Mono, monospace')
       .text(d => d.label)
