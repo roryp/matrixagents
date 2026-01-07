@@ -507,8 +507,8 @@ OpenAiOfficialChatModel.builder()
 
 Events are streamed via STOMP over SockJS:
 - **Endpoint**: `/ws`
-- **Subscribe**: `/topic/events/{executionId}`
-- **Send**: `/app/execute`
+- **Subscribe (global)**: `/topic/events`
+- **Subscribe (pattern)**: `/topic/patterns/{patternId}`
 
 ## API Endpoints
 
