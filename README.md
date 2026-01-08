@@ -181,7 +181,7 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 **When to use:** Complex goals with many possible paths.
 
 **Example prompt:** *"Generate a personalized horoscope for someone born on March 15th"*
-- GOAP calculates: GoalPlanner → PersonExtractor → SignExtractor → HoroscopeGenerator → WriterAgent
+- GOAP calculates the dependency graph and executes: SignExtractor → (HoroscopeGenerator + StoryFinder in parallel) → WriterAgent
 
 ---
 
@@ -189,14 +189,15 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 **What it does:** Agents collaborate as equals, reacting to each other's outputs without a central controller.
 
-**Real-world analogy:** A writers' room:
-- **Idea Generator** throws out concepts
-- **Critic** challenges weak ideas
-- **Validator** checks feasibility
-- **Scorer** ranks the best options
-- They iterate until consensus emerges
+**Real-world analogy:** A research lab:
+- **LiteratureAgent** reviews existing research
+- **HypothesisAgent** formulates testable hypotheses
+- **CriticAgent** challenges weak hypotheses
+- **ValidationAgent** refines based on critique
+- **ScorerAgent** evaluates quality
+- They iterate reactively until quality threshold is met
 
-**When to use:** Creative tasks, brainstorming, when you want emergent behavior.
+**When to use:** Research, brainstorming, when you want emergent collaboration.
 
 **Example prompt:** *"Generate and evaluate startup ideas for AI in healthcare"*
 
