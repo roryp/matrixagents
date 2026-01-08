@@ -154,14 +154,82 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
           break
         
         case 'GOAP':
+          // DAG layout - organize by dependency levels (left to right)
+          // Calculate levels based on edge dependencies
+          const goapEdges = pattern.topology.edges
+          const incomingCount = new Map<string, number>()
+          const outgoingTo = new Map<string, string[]>()
+          
+          nodes.forEach(n => {
+            incomingCount.set(n.id, 0)
+            outgoingTo.set(n.id, [])
+          })
+          
+          goapEdges.forEach((e: { from: string; to: string }) => {
+            incomingCount.set(e.to, (incomingCount.get(e.to) || 0) + 1)
+            const existing = outgoingTo.get(e.from) || []
+            existing.push(e.to)
+            outgoingTo.set(e.from, existing)
+          })
+          
+          // Assign levels using topological sort
+          const levels = new Map<string, number>()
+          const queue: string[] = []
+          
+          nodes.forEach(n => {
+            if (incomingCount.get(n.id) === 0) {
+              queue.push(n.id)
+              levels.set(n.id, 0)
+            }
+          })
+          
+          while (queue.length > 0) {
+            const current = queue.shift()!
+            const currentLevel = levels.get(current) || 0
+            const targets = outgoingTo.get(current) || []
+            
+            targets.forEach(target => {
+              const newLevel = Math.max(levels.get(target) || 0, currentLevel + 1)
+              levels.set(target, newLevel)
+              const remaining = incomingCount.get(target)! - 1
+              incomingCount.set(target, remaining)
+              if (remaining === 0) {
+                queue.push(target)
+              }
+            })
+          }
+          
+          // Group nodes by level
+          const nodesByLevel = new Map<number, Node[]>()
+          nodes.forEach(node => {
+            const level = levels.get(node.id) || 0
+            if (!nodesByLevel.has(level)) {
+              nodesByLevel.set(level, [])
+            }
+            nodesByLevel.get(level)!.push(node)
+          })
+          
+          const maxLevel = Math.max(...Array.from(levels.values()))
+          const levelWidth = (width - 2 * padding) / (maxLevel + 1)
+          
+          nodesByLevel.forEach((levelNodes, level) => {
+            const levelX = padding + level * levelWidth + levelWidth / 2
+            const verticalSpacing = (height - 2 * padding) / (levelNodes.length + 1)
+            
+            levelNodes.forEach((node, i) => {
+              node.x = levelX
+              node.y = padding + (i + 1) * verticalSpacing
+            })
+          })
+          break
+        
         case 'P2P':
-          // Grid layout
-          const cols = Math.ceil(Math.sqrt(nodes.length))
+          // Circular mesh layout for peer-to-peer with feedback loops
+          const radius = Math.min(width, height) / 3
           nodes.forEach((node, i) => {
-            const row = Math.floor(i / cols)
-            const col = i % cols
-            node.x = padding + (col + 0.5) * (width - 2 * padding) / cols
-            node.y = padding + (row + 0.5) * (height - 2 * padding) / Math.ceil(nodes.length / cols)
+            const angle = (i / nodes.length) * 2 * Math.PI - Math.PI / 2
+            node.x = centerX + Math.cos(angle) * radius
+            node.y = centerY + Math.sin(angle) * radius * 0.8
           })
           break
         
@@ -215,19 +283,81 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
     // Draw edges
     const nodeMap = new Map(nodes.map(n => [n.id, n]))
     
-    svg.selectAll('.edge')
-      .data(edges)
-      .enter()
-      .append('line')
-      .attr('class', d => `edge ${d.active ? 'edge-active' : ''}`)
-      .attr('x1', d => nodeMap.get(d.source)?.x || 0)
-      .attr('y1', d => nodeMap.get(d.source)?.y || 0)
-      .attr('x2', d => nodeMap.get(d.target)?.x || 0)
-      .attr('y2', d => nodeMap.get(d.target)?.y || 0)
-      .attr('stroke', d => d.active ? '#00ff41' : '#008f11')
-      .attr('stroke-width', d => d.active ? 3 : 2)
-      .attr('marker-end', 'url(#arrowhead)')
-      .style('filter', d => d.active ? 'url(#glow)' : 'none')
+    // For P2P, use curved paths to show mesh connections better
+    if (pattern.topology.type === 'P2P') {
+      // Define curved arrow marker with adjusted refX for paths
+      svg.select('defs').append('marker')
+        .attr('id', 'arrowhead-curved')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 8)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#00ff41')
+      
+      svg.selectAll('.edge')
+        .data(edges)
+        .enter()
+        .append('path')
+        .attr('class', d => `edge ${d.active ? 'edge-active' : ''}`)
+        .attr('d', d => {
+          const source = nodeMap.get(d.source)
+          const target = nodeMap.get(d.target)
+          if (!source || !target) return ''
+          
+          const sx = source.x!, sy = source.y!
+          const tx = target.x!, ty = target.y!
+          
+          // Calculate control point for quadratic curve
+          const midX = (sx + tx) / 2
+          const midY = (sy + ty) / 2
+          
+          // Offset perpendicular to the line for curved effect
+          const dx = tx - sx
+          const dy = ty - sy
+          const len = Math.sqrt(dx * dx + dy * dy)
+          const offset = len * 0.2 // 20% curve
+          
+          // Perpendicular offset
+          const cpx = midX - (dy / len) * offset
+          const cpy = midY + (dx / len) * offset
+          
+          // Shorten the path to account for node radius
+          const nodeRadius = 25
+          const startOffset = nodeRadius / len
+          const endOffset = nodeRadius / len
+          
+          const startX = sx + dx * startOffset
+          const startY = sy + dy * startOffset
+          const endX = tx - dx * endOffset
+          const endY = ty - dy * endOffset
+          
+          return `M ${startX} ${startY} Q ${cpx} ${cpy} ${endX} ${endY}`
+        })
+        .attr('stroke', d => d.active ? '#00ff41' : '#008f11')
+        .attr('stroke-width', d => d.active ? 3 : 2)
+        .attr('fill', 'none')
+        .attr('marker-end', 'url(#arrowhead-curved)')
+        .style('filter', d => d.active ? 'url(#glow)' : 'none')
+    } else {
+      // Standard straight line edges for other topologies
+      svg.selectAll('.edge')
+        .data(edges)
+        .enter()
+        .append('line')
+        .attr('class', d => `edge ${d.active ? 'edge-active' : ''}`)
+        .attr('x1', d => nodeMap.get(d.source)?.x || 0)
+        .attr('y1', d => nodeMap.get(d.source)?.y || 0)
+        .attr('x2', d => nodeMap.get(d.target)?.x || 0)
+        .attr('y2', d => nodeMap.get(d.target)?.y || 0)
+        .attr('stroke', d => d.active ? '#00ff41' : '#008f11')
+        .attr('stroke-width', d => d.active ? 3 : 2)
+        .attr('marker-end', 'url(#arrowhead)')
+        .style('filter', d => d.active ? 'url(#glow)' : 'none')
+    }
 
     // Draw edge labels - positioned at 40% from source toward target
     // with perpendicular offset to avoid overlap with edge lines
