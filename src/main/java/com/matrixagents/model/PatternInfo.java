@@ -113,10 +113,8 @@ public record PatternInfo(
             "Goal-Oriented Planning (GOAP)",
             "Calculates the shortest path through agent dependencies to achieve a goal efficiently.",
             "planning",
-            List.of("GoalPlanner", "PersonExtractor", "SignExtractor", "HoroscopeGenerator", "StoryFinder", "WriterAgent"),
+            List.of("SignExtractor", "HoroscopeGenerator", "StoryFinder", "WriterAgent"),
             Map.of("type", "GOAP", "edges", List.of(
-                Map.of("from", "GoalPlanner", "to", "PersonExtractor"),
-                Map.of("from", "PersonExtractor", "to", "SignExtractor"),
                 Map.of("from", "SignExtractor", "to", "HoroscopeGenerator"),
                 Map.of("from", "SignExtractor", "to", "StoryFinder"),
                 Map.of("from", "HoroscopeGenerator", "to", "WriterAgent"),
@@ -132,13 +130,13 @@ public record PatternInfo(
             "Peer-to-Peer (P2P)",
             "Decentralized agent coordination where agents react to state changes and collaborate autonomously.",
             "planning",
-            List.of("LiteratureAgent", "HypothesisAgent", "CriticAgent", "ValidationAgent", "ScorerAgent", "SynthesizerAgent"),
+            List.of("LiteratureAgent", "HypothesisAgent", "CriticAgent", "ValidationAgent", "ScorerAgent"),
             Map.of("type", "P2P", "edges", List.of(
                 Map.of("from", "LiteratureAgent", "to", "HypothesisAgent"),
                 Map.of("from", "HypothesisAgent", "to", "CriticAgent"),
+                Map.of("from", "HypothesisAgent", "to", "ScorerAgent"),
                 Map.of("from", "CriticAgent", "to", "ValidationAgent"),
-                Map.of("from", "ValidationAgent", "to", "ScorerAgent"),
-                Map.of("from", "ScorerAgent", "to", "SynthesizerAgent")
+                Map.of("from", "ValidationAgent", "to", "HypothesisAgent")
             )),
             "Research the effects of caffeine on cognitive performance"
         );
