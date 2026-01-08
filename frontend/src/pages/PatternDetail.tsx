@@ -296,7 +296,7 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
                     <span>{result.durationMs}ms</span>
                   </div>
                 )}
-                <div className="mt-4 p-3 bg-matrix-dark/50 rounded border border-matrix-primary/20 max-h-64 overflow-y-auto prose prose-invert prose-sm max-w-none prose-p:my-1 prose-strong:text-matrix-primary prose-headings:text-matrix-primary">
+                <div className="mt-4 p-3 bg-matrix-dark/50 rounded border border-matrix-primary/20 max-h-64 overflow-y-auto prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:text-gray-300 prose-strong:text-matrix-primary prose-strong:font-bold prose-headings:text-matrix-primary">
                   <ReactMarkdown>
                     {result.result === 'null' || !result.result 
                       ? '(No result returned)'

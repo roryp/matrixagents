@@ -94,7 +94,7 @@ export default function EventLog({ events, maxHeight = '400px' }: EventLogProps)
                       {new Date(event.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  <div className="text-sm text-matrix-secondary break-words prose prose-invert prose-sm max-w-none prose-p:my-1 prose-strong:text-matrix-primary">
+                  <div className="break-words prose prose-invert prose-sm max-w-none prose-p:my-1 prose-p:text-matrix-secondary prose-strong:text-matrix-primary prose-strong:font-bold">
                     <ReactMarkdown>
                       {(event.message === 'null' || !event.message) 
                         ? '(completed with no output)'
