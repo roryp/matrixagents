@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { 
   ArrowLeft, 
   Play, 
@@ -295,10 +296,12 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
                     <span>{result.durationMs}ms</span>
                   </div>
                 )}
-                <div className="mt-4 p-3 bg-matrix-dark/50 rounded border border-matrix-primary/20 max-h-64 overflow-y-auto">
-                  <pre className="text-xs whitespace-pre-wrap text-matrix-secondary">
-                    {result.result}
-                  </pre>
+                <div className="mt-4 p-3 bg-matrix-dark/50 rounded border border-matrix-primary/20 max-h-64 overflow-y-auto prose prose-invert prose-sm max-w-none prose-p:my-1 prose-strong:text-matrix-primary prose-headings:text-matrix-primary">
+                  <ReactMarkdown>
+                    {result.result === 'null' || !result.result 
+                      ? '(No result returned)'
+                      : result.result}
+                  </ReactMarkdown>
                 </div>
               </div>
             </motion.div>

@@ -68,13 +68,14 @@ public class WebSocketAgentListener implements AgentListener {
         Object output = response.output();
         AgenticScope scope = response.agenticScope();
         
-        log.debug("Agent {} completed with output: {}", agentName, truncate(String.valueOf(output)));
+        // Handle null output gracefully
+        String outputStr = output != null ? truncate(String.valueOf(output)) : "(completed with no output)";
+        log.debug("Agent {} completed with output: {}", agentName, outputStr);
         
         // Capture scope state
         captureScope(scope);
         
         // Publish completion event
-        String outputStr = truncate(String.valueOf(output));
         AgentEvent event = AgentEvent.agentCompleted(patternId, agentName, outputStr);
         events.add(event);
         eventPublisher.publish(event);

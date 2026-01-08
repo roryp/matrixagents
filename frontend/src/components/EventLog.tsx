@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { AgentEvent } from '../types'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { 
   Play, 
   CheckCircle, 
@@ -93,11 +94,15 @@ export default function EventLog({ events, maxHeight = '400px' }: EventLogProps)
                       {new Date(event.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="text-sm text-matrix-secondary break-words">
-                    {event.message.length > 200 
-                      ? event.message.substring(0, 200) + '...' 
-                      : event.message}
-                  </p>
+                  <div className="text-sm text-matrix-secondary break-words prose prose-invert prose-sm max-w-none prose-p:my-1 prose-strong:text-matrix-primary">
+                    <ReactMarkdown>
+                      {(event.message === 'null' || !event.message) 
+                        ? '(completed with no output)'
+                        : event.message.length > 200 
+                          ? event.message.substring(0, 200) + '...' 
+                          : event.message}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             </motion.div>
