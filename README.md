@@ -219,109 +219,88 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 ## Technical Architecture
 
-### AgenticScope: When It's Used vs Manual Orchestration
+### AgenticScope: Unified State Management
 
-LangChain4j's `langchain4j-agentic` module provides `AgenticScope` for sharing state between agents. This showcase uses **both approaches** depending on the pattern's needs:
+All 8 patterns in this showcase use **LangChain4j's `AgenticServices`** builders with `AgenticScope` for unified state management. The `AgenticScope` provides:
+
+- **State sharing** between agents via `scope.readState()` / `scope.writeState()`
+- **Output key mapping** via `@Agent(outputKey = "result")` 
+- **Agent invocation tracking** for debugging
+- **Real-time events** via `AgentListener` for WebSocket streaming
 
 #### Pattern Implementation Summary
 
-| Pattern | Implementation | Uses AgenticScope? | Why? |
-|---------|---------------|-------------------|------|
-| **Sequence** | Manual `AiServices.builder()` | ❌ Manual | Real-time step-by-step events |
-| **Parallel** | `AgenticServices.createAgenticSystem()` | ✅ Internal | Concurrent execution handled by framework |
-| **Loop** | Manual `AiServices.builder()` | ❌ Manual | Per-iteration WebSocket updates |
-| **Conditional** | `AgenticServices.createAgenticSystem()` | ✅ Internal | Declarative routing via annotations |
-| **Supervisor** | `AgenticServices.supervisorBuilder()` | ✅ Internal | LLM-driven planning needs framework |
-| **Human-in-Loop** | Manual `AiServices.builder()` | ❌ Manual | Human interaction points need control |
-| **GOAP** | Manual `AiServices.builder()` | ❌ Manual | Custom planning algorithm |
-| **P2P** | Manual `AiServices.builder()` | ❌ Manual | Custom peer coordination |
+| Pattern | Builder Used | AgenticScope Access |
+|---------|-------------|---------------------|
+| **Sequence** | `AgenticServices.sequenceBuilder()` | `invokeWithAgenticScope()` |
+| **Parallel** | `AgenticServices.createAgenticSystem()` | Internal (annotation-driven) |
+| **Loop** | `AgenticServices.loopBuilder()` | `invokeWithAgenticScope()` |
+| **Conditional** | `AgenticServices.createAgenticSystem()` | Internal (annotation-driven) |
+| **Supervisor** | `AgenticServices.supervisorBuilder()` | Internal (LLM-driven) |
+| **Human-in-Loop** | `AgenticServices.agentBuilder()` | Manual orchestration for human wait |
+| **GOAP** | `AgenticServices.plannerBuilder()` + `GoalOrientedPlanner` | `invokeWithAgenticScope()` |
+| **P2P** | `AgenticServices.plannerBuilder()` + `P2PPlanner` | `invokeWithAgenticScope()` |
 
-#### How AgenticScope Works (Patterns that use it)
+#### Real-Time WebSocket Events with AgentListener
 
-For **Supervisor**, **Parallel**, and **Conditional** patterns, we use `AgenticServices` builders:
+The key to real-time UI updates is the `AgentListener` interface. All patterns that use builders like `sequenceBuilder()`, `loopBuilder()`, or `plannerBuilder()` can attach a listener:
 
 ```java
-// Supervisor - LLM plans and coordinates sub-agents autonomously
-SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
-    .chatModel(plannerModel)
-    .subAgents(withdrawAgent, creditAgent, exchangeAgent)
-    .responseStrategy(SupervisorResponseStrategy.SUMMARY)
+// Sequence with real-time WebSocket events
+UntypedAgent novelCreator = AgenticServices.sequenceBuilder()
+    .name("novelCreator")
+    .subAgents(writer, audienceEditor, styleEditor)
+    .listener(webSocketListener)  // ← Receives events as agents execute
+    .outputKey("story")
     .build();
 
-String response = supervisor.invoke(prompt);  // AgenticScope created internally
+ResultWithAgenticScope<String> result = novelCreator.invokeWithAgenticScope(
+    Map.of("topic", topic, "audience", audience, "style", style));
 ```
 
-The `AgenticScope` is automatically created when `invoke()` is called. It:
-- Stores each sub-agent's output via `@Agent(outputKey = "result")`
-- Provides state sharing between agents via `scope.readState()` / `scope.writeState()`
-- Tracks agent invocations for debugging
+The `WebSocketAgentListener` implements `AgentListener` to capture:
+- `beforeAgentExecution()` → Publish "AGENT_INVOKED" event
+- `afterAgentExecution()` → Publish "AGENT_COMPLETED" event with output
+- State changes → Publish "STATE_UPDATED" events
 
-#### Why Manual Orchestration (Patterns that don't use it)
+#### Planning Patterns with Custom Planners
 
-For **Loop**, **Sequence**, **Human-in-Loop**, **GOAP**, and **P2P** patterns:
-
-```java
-// Loop - Manual orchestration for real-time UI updates
-Map<String, Object> scope = new ConcurrentHashMap<>();
-
-for (int iteration = 1; iteration <= maxIterations; iteration++) {
-    // Generate
-    String story = generator.generateStory(topic);
-    scope.put("story", story);
-    events.add(publishEvent(AgentEvent.agentCompleted("loop", "creativeWriter", story)));
-    
-    // Score  
-    double score = scorer.scoreStyle(story, style);
-    scope.put("score", score);
-    events.add(publishEvent(AgentEvent.stateUpdated("loop", "score", score)));  // ← WebSocket event!
-    
-    if (score >= 0.8) break;
-    
-    // Refine...
-}
-```
-
-**Why not use AgenticServices.loopBuilder()?**
-- `loopBuilder()` runs internally without per-iteration callbacks
-- We need `publishEvent()` after **each agent call** for real-time UI
-- The manual `ConcurrentHashMap` mirrors AgenticScope but with full control
-
-#### Trade-offs
-
-| Feature | AgenticServices (Supervisor, etc.) | Manual Orchestration (Loop, etc.) |
-|---------|-----------------------------------|----------------------------------|
-| Code simplicity | ✅ Declarative, less code | ❌ More boilerplate |
-| Framework features | ✅ Error recovery, persistence | ❌ Must implement yourself |
-| Real-time events | ❌ Single result only | ✅ Per-step WebSocket updates |
-| UI visualization | ❌ Final state only | ✅ Incremental progress |
-| Custom logic | ❌ Limited to framework | ✅ Full control |
-
-#### Why Supervisor Works Without Explicit AgenticScope
-
-Looking at the code, you might wonder how `SupervisorAgent` works:
+GOAP and P2P use `AgenticServices.plannerBuilder()` with custom planner implementations:
 
 ```java
-SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
-    .subAgents(withdrawAgent, creditAgent, exchangeAgent)
+// GOAP - Goal-Oriented Action Planning
+UntypedAgent goapWorkflow = AgenticServices.plannerBuilder()
+    .subAgents(signExtractor, horoscopeGenerator, storyFinder, writer)
+    .outputKey("writeup")  // The goal state
+    .planner(GoalOrientedPlanner::new)  // Calculates shortest path to goal
+    .listener(listener)
     .build();
 
-String response = supervisor.invoke(prompt);  // Just returns a string!
+// P2P - Peer-to-Peer Reactive Collaboration
+UntypedAgent p2pWorkflow = AgenticServices.plannerBuilder()
+    .subAgents(literatureAgent, hypothesisAgent, criticAgent, scorerAgent)
+    .outputKey("hypothesis")
+    .planner(() -> new P2PPlanner(plannerModel, 10, scope -> 
+        scope.readState("score", 0.0) >= 0.75  // Exit when score threshold reached
+    ))
+    .listener(listener)
+    .build();
 ```
 
-The `AgenticScope` is **internal** to the framework:
-1. `invoke()` creates an ephemeral `AgenticScope`
-2. The supervisor LLM plans which sub-agents to call
-3. Each sub-agent writes results to the scope (internally)
-4. The supervisor reads results and produces a summary
-5. The scope is discarded after `invoke()` returns
+#### Accessing AgenticScope State
 
-We don't see it because we only need the final response. If we wanted the scope:
+All patterns can access the shared state after execution:
 
 ```java
-// To access the AgenticScope (not used in this showcase)
-ResultWithAgenticScope<String> result = supervisor.invokeWithScope(prompt);
-AgenticScope agenticScope = result.agenticScope();
-agenticScope.readState("withdrawResult");  // Access internal state
+ResultWithAgenticScope<String> result = workflow.invokeWithAgenticScope(inputs);
+
+// Access the result
+String output = result.result();
+
+// Access intermediate state from AgenticScope
+AgenticScope scope = result.agenticScope();
+Double score = scope.readState("score", 0.0);
+String hypothesis = scope.readState("hypothesis", "");
 ```
 
 ---
