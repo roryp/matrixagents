@@ -7,162 +7,102 @@ import dev.langchain4j.service.V;
 
 /**
  * Agents for the GOAP (Goal-Oriented Action Planning) PATTERN using langchain4j-agentic module.
- * Demonstrates planning where agents are selected based on available state to achieve a goal.
- * Pattern: Planner analyzes goal -> Determines required agents -> Executes plan.
  * 
- * Uses @Agent annotation with state-based activation for goal-oriented workflows.
+ * GOAP uses GoalOrientedPlanner which automatically:
+ * 1. Builds a dependency graph from agent input/output keys
+ * 2. Calculates the shortest path from current state to goal
+ * 3. Executes agents in the computed sequence
+ * 
+ * Key: Each agent's @V parameters define inputs, outputKey defines output.
+ * The planner uses these to build the dependency graph.
+ * 
+ * Dependency Graph:
+ *   prompt -> sign (via SignExtractor)
+ *   sign -> horoscope (via HoroscopeGenerator)
+ *   sign -> story (via StoryFinder)
+ *   horoscope, story -> writeup (via WriterAgent)
  */
 public interface GOAPAgents {
 
     /**
-     * Record types for GOAP state.
-     */
-    record Person(String name, String birthDate) {}
-    record ZodiacSign(String sign, String element, String ruling_planet) {}
-
-    /**
-     * GoalPlanner: Analyzes the goal and determines the execution plan.
-     * Output key: "plan" - contains the execution sequence
-     */
-    interface GoalPlanner {
-        @SystemMessage("""
-            You are a goal-oriented action planner. Given a goal and current state,
-            determine the sequence of actions needed to achieve the goal.
-            
-            Available agents and what they need/produce:
-            - PersonExtractor: needs (prompt) -> produces (person name, birth date)
-            - SignExtractor: needs (birth date) -> produces (zodiac sign)
-            - HoroscopeGenerator: needs (sign) -> produces (horoscope)
-            - StoryFinder: needs (sign) -> produces (related mythology/stories)
-            - WriterAgent: needs (horoscope, stories) -> produces (final writeup)
-            
-            Analyze what information is available and what agents are needed.
-            
-            Format your response as:
-            PLAN:
-            1. [Agent] - [Reason]
-            2. [Agent] - [Reason]
-            ...
-            MISSING: [What info is missing, if any]
-            """)
-        @UserMessage("""
-            Goal: {{goal}}
-            
-            Current state:
-            {{state}}
-            """)
-        @Agent(description = "Creates execution plans to achieve goals", outputKey = "plan")
-        String createPlan(@V("goal") String goal, @V("state") String state);
-    }
-
-    /**
-     * PersonExtractor: Extracts person information from the prompt.
-     * Output key: "personInfo" - contains name and birthdate
-     */
-    interface PersonExtractor {
-        @SystemMessage("""
-            You are an entity extractor. Extract person information from the text.
-            Look for names and birth dates (or any date that could be a birthday).
-            
-            Format response as:
-            NAME: [extracted name or "unknown"]
-            BIRTHDATE: [extracted date in YYYY-MM-DD format or "unknown"]
-            """)
-        @UserMessage("Extract person info from: {{prompt}}")
-        @Agent(description = "Extracts person information from text", outputKey = "personInfo")
-        String extractPerson(@V("prompt") String prompt);
-    }
-
-    /**
-     * SignExtractor: Determines zodiac sign from birth date.
-     * Output key: "signInfo" - contains sign, element, and ruling planet
+     * SignExtractor: Extracts zodiac sign from the prompt.
+     * Input: prompt -> Output: sign
      */
     interface SignExtractor {
         @SystemMessage("""
-            You are a zodiac expert. Given a birth date, determine the zodiac sign.
-            Provide the sign with its element and ruling planet.
+            You are a zodiac expert. Extract or determine the zodiac sign from the text.
+            Look for:
+            - Directly mentioned zodiac signs (Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces)
+            - Birth dates that can be converted to zodiac signs
             
-            Format:
-            SIGN: [zodiac sign]
-            ELEMENT: [Fire/Earth/Air/Water]
-            PLANET: [ruling planet]
+            Return ONLY the zodiac sign name (e.g., "Scorpio", "Leo").
+            If no sign can be determined, return "Aries".
             """)
-        @UserMessage("What zodiac sign is someone born on {{birthDate}}?")
-        @Agent(description = "Determines zodiac sign from birth date", outputKey = "signInfo")
-        String determineSign(@V("birthDate") String birthDate);
+        @UserMessage("What zodiac sign is mentioned or can be determined from: {{prompt}}")
+        @Agent("Extract zodiac sign from user's prompt")
+        String extractSign(@V("prompt") String prompt);
     }
 
     /**
      * HoroscopeGenerator: Creates a horoscope for a zodiac sign.
-     * Output key: "horoscope"
+     * Input: sign -> Output: horoscope
      */
     interface HoroscopeGenerator {
         @SystemMessage("""
             You are an astrologer. Generate a detailed, personalized horoscope.
             Include predictions for love, career, health, and general fortune.
             Make it engaging and positive while feeling authentic.
+            Keep the response concise (3-4 paragraphs).
             """)
-        @UserMessage("Generate a horoscope for {{sign}} ({{element}} sign, ruled by {{planet}}):")
-        @Agent(description = "Generates horoscopes for zodiac signs", outputKey = "horoscope")
-        String generateHoroscope(@V("sign") String sign, @V("element") String element, @V("planet") String planet);
+        @UserMessage("Generate a horoscope for someone who is a {{sign}}:")
+        @Agent("Generate horoscope based on zodiac sign")
+        String generateHoroscope(@V("sign") String sign);
     }
 
     /**
      * StoryFinder: Finds mythology and stories related to the zodiac sign.
-     * Output key: "mythology"
+     * Input: sign -> Output: story
      */
     interface StoryFinder {
         @SystemMessage("""
             You are a mythology expert specializing in zodiac lore.
-            Share interesting myths, legends, and cultural stories about the zodiac sign.
-            Include Greek mythology, cultural significance, and famous personalities.
-            Keep it engaging and educational.
+            Share an interesting myth, legend, or cultural story about the zodiac sign.
+            Include Greek mythology references and cultural significance.
+            Keep it engaging and educational (2-3 paragraphs).
             """)
-        @UserMessage("Tell me the mythology and stories behind {{sign}}:")
-        @Agent(description = "Finds mythology and stories for zodiac signs", outputKey = "mythology")
-        String findStories(@V("sign") String sign);
+        @UserMessage("Tell me a mythology story about the zodiac sign {{sign}}:")
+        @Agent("Find mythology and stories related to a zodiac sign")
+        String findStory(@V("sign") String sign);
     }
 
     /**
      * WriterAgent: Composes the final writeup from all gathered information.
-     * Output key: "writeup" - the final result
+     * Inputs: horoscope, story -> Output: writeup (the goal)
      */
     interface WriterAgent {
         @SystemMessage("""
             You are a skilled writer who creates beautiful, personalized astrology writeups.
             Combine the horoscope and mythology into a cohesive, engaging narrative.
-            If a person's name is known, personalize the writeup.
             
-            Structure:
-            1. Personalized greeting (if name known)
-            2. Zodiac overview
-            3. Today's horoscope
-            4. Mythological connections
-            5. Closing blessing
+            Structure your response as:
+            1. A warm greeting
+            2. Zodiac sign overview
+            3. Today's horoscope predictions
+            4. Mythological connections and stories
+            5. A closing blessing
+            
+            Make it feel personal and magical.
             """)
         @UserMessage("""
             Create a personalized astrology writeup:
-            
-            Person: {{personName}}
-            Sign: {{sign}}
             
             Horoscope:
             {{horoscope}}
             
             Mythology:
-            {{mythology}}
+            {{story}}
             """)
-        @Agent(description = "Composes personalized astrology writeups", outputKey = "writeup")
-        String compose(@V("personName") String personName, @V("sign") String sign,
-                       @V("horoscope") String horoscope, @V("mythology") String mythology);
-    }
-
-    /**
-     * AstrologyWorkflow: Typed interface for the GOAP workflow.
-     * Uses goal-oriented planning to achieve personalized astrology writeup.
-     */
-    interface AstrologyWorkflow {
-        @Agent
-        String createAstrologyWriteup(@V("prompt") String prompt);
+        @Agent("Compose personalized astrology writeup from horoscope and mythology")
+        String write(@V("horoscope") String horoscope, @V("story") String story);
     }
 }

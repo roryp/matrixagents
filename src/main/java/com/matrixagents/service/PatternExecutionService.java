@@ -21,9 +21,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PreDestroy;
 
 import com.matrixagents.agents.ConditionalAgents.ExpertChatbot;
-import com.matrixagents.agents.GOAPAgents.GoalPlanner;
 import com.matrixagents.agents.GOAPAgents.HoroscopeGenerator;
-import com.matrixagents.agents.GOAPAgents.PersonExtractor;
 import com.matrixagents.agents.GOAPAgents.SignExtractor;
 import com.matrixagents.agents.GOAPAgents.StoryFinder;
 import com.matrixagents.agents.GOAPAgents.WriterAgent;
@@ -34,7 +32,6 @@ import com.matrixagents.agents.P2PAgents.CriticAgent;
 import com.matrixagents.agents.P2PAgents.HypothesisAgent;
 import com.matrixagents.agents.P2PAgents.LiteratureAgent;
 import com.matrixagents.agents.P2PAgents.ScorerAgent;
-import com.matrixagents.agents.P2PAgents.SynthesizerAgent;
 import com.matrixagents.agents.P2PAgents.ValidationAgent;
 import com.matrixagents.agents.ParallelAgents.EveningPlan;
 import com.matrixagents.agents.ParallelAgents.EveningPlannerAgent;
@@ -53,6 +50,8 @@ import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
+import dev.langchain4j.agentic.patterns.goap.GoalOrientedPlanner;
+import dev.langchain4j.agentic.patterns.p2p.P2PPlanner;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 
@@ -502,8 +501,9 @@ public class PatternExecutionService {
 
     /**
      * GOAP PATTERN: Goal-Oriented Action Planning
-     * Uses AgenticServices.agentBuilder() for agents that are selected based on available state to achieve a goal.
-     * Note: GOAP requires manual orchestration for goal-based action selection.
+     * Uses GoalOrientedPlanner which automatically builds a dependency graph from agent 
+     * input/output keys and calculates the shortest path from current state to the goal.
+     * The planner then executes agents in the computed sequence automatically.
      */
     private ExecutionResult executeGOAP(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -512,109 +512,64 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow using AgenticServices: Planning path to goal")));
+            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow using GoalOrientedPlanner: Automatic path planning to goal")));
 
-            scope.put("prompt", prompt);
-            scope.put("goal", "Create personalized astrology writeup");
+            // Create listener for real-time WebSocket events
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "goap", events);
 
-            // Build agents using AgenticServices.agentBuilder() - proper LangChain4j way
-            GoalPlanner planner = AgenticServices.agentBuilder(GoalPlanner.class)
-                    .chatModel(plannerModel)
-                    .build();
-
-            PersonExtractor personExtractor = AgenticServices.agentBuilder(PersonExtractor.class)
-                    .chatModel(chatModel)
-                    .build();
-
+            // Build agents using AgenticServices.agentBuilder() with proper output keys
+            // The GoalOrientedPlanner will analyze these to build the dependency graph:
+            // prompt -> sign -> horoscope, story -> writeup
             SignExtractor signExtractor = AgenticServices.agentBuilder(SignExtractor.class)
                     .chatModel(chatModel)
+                    .outputKey("sign")  // prompt -> sign
                     .build();
 
-            HoroscopeGenerator horoscopeGen = AgenticServices.agentBuilder(HoroscopeGenerator.class)
+            HoroscopeGenerator horoscopeGenerator = AgenticServices.agentBuilder(HoroscopeGenerator.class)
                     .chatModel(chatModel)
+                    .outputKey("horoscope")  // sign -> horoscope
                     .build();
 
             StoryFinder storyFinder = AgenticServices.agentBuilder(StoryFinder.class)
                     .chatModel(chatModel)
+                    .outputKey("story")  // sign -> story
                     .build();
 
             WriterAgent writer = AgenticServices.agentBuilder(WriterAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("writeup")  // horoscope, story -> writeup (GOAL)
                     .build();
 
-            // Step 1: Plan
-            String currentState = "Available: prompt";
-            events.add(publishEvent(AgentEvent.agentInvoked("goap", "goalPlanner", "Creating execution plan...")));
-            String plan = planner.createPlan("Create personalized astrology writeup", currentState);
-            events.add(publishEvent(AgentEvent.agentCompleted("goap", "goalPlanner", truncate(plan))));
-            events.add(publishEvent(AgentEvent.stateUpdated("goap", "plan", plan)));
+            // Build GOAP workflow using plannerBuilder with GoalOrientedPlanner
+            // The planner will:
+            // 1. Build dependency graph from agent input/output keys
+            // 2. Calculate shortest path from "prompt" to "writeup"
+            // 3. Execute agents in computed sequence: signExtractor -> horoscopeGenerator, storyFinder -> writer
+            UntypedAgent goapWorkflow = AgenticServices.plannerBuilder()
+                    .subAgents(signExtractor, horoscopeGenerator, storyFinder, writer)
+                    .outputKey("writeup")  // The goal state we want to reach
+                    .planner(GoalOrientedPlanner::new)  // Uses GOAP algorithm!
+                    .listener(listener)
+                    .build();
 
-            // Step 2: Extract person info
-            events.add(publishEvent(AgentEvent.agentInvoked("goap", "personExtractor", "Extracting person info...")));
-            String personInfo = personExtractor.extractPerson(prompt);
-            scope.put("personInfo", personInfo);
-            events.add(publishEvent(AgentEvent.agentCompleted("goap", "personExtractor", truncate(personInfo))));
-            events.add(publishEvent(AgentEvent.stateUpdated("goap", "personInfo", personInfo)));
+            scope.put("prompt", prompt);
+            events.add(publishEvent(AgentEvent.stateUpdated("goap", "prompt", truncate(prompt))));
 
-            // Parse person info
-            String personName = "Friend";
-            String birthDate = null;
-            for (String line : personInfo.split("\n")) {
-                if (line.toUpperCase().startsWith("NAME:")) {
-                    String name = line.substring(5).trim();
-                    if (!name.equalsIgnoreCase("unknown")) personName = name;
-                } else if (line.toUpperCase().startsWith("BIRTHDATE:")) {
-                    String date = line.substring(10).trim();
-                    if (!date.equalsIgnoreCase("unknown")) birthDate = date;
-                }
-            }
-            scope.put("personName", personName);
+            // Execute the GOAP workflow - the planner automatically determines and executes the path
+            events.add(publishEvent(AgentEvent.agentInvoked("goap", "goalOrientedPlanner", "Computing optimal agent path to goal...")));
+            ResultWithAgenticScope<String> result = goapWorkflow.invokeWithAgenticScope(Map.of("prompt", prompt));
 
-            // Step 3: Get zodiac sign
-            String sign = "Aries";
-            String element = "Fire";
-            String planet = "Mars";
-
-            if (birthDate != null) {
-                events.add(publishEvent(AgentEvent.agentInvoked("goap", "signExtractor", "Determining zodiac sign...")));
-                String signInfo = signExtractor.determineSign(birthDate);
-                scope.put("signInfo", signInfo);
-                events.add(publishEvent(AgentEvent.agentCompleted("goap", "signExtractor", truncate(signInfo))));
-                events.add(publishEvent(AgentEvent.stateUpdated("goap", "signInfo", signInfo)));
-
-                // Parse sign info
-                for (String line : signInfo.split("\n")) {
-                    if (line.toUpperCase().startsWith("SIGN:")) sign = line.substring(5).trim();
-                    else if (line.toUpperCase().startsWith("ELEMENT:")) element = line.substring(8).trim();
-                    else if (line.toUpperCase().startsWith("PLANET:")) planet = line.substring(7).trim();
-                }
-            }
-            scope.put("sign", sign);
-
-            // Step 4: Generate horoscope
-            events.add(publishEvent(AgentEvent.agentInvoked("goap", "horoscopeGenerator", "Generating horoscope...")));
-            String horoscope = horoscopeGen.generateHoroscope(sign, element, planet);
-            scope.put("horoscope", horoscope);
-            events.add(publishEvent(AgentEvent.agentCompleted("goap", "horoscopeGenerator", truncate(horoscope))));
-            events.add(publishEvent(AgentEvent.stateUpdated("goap", "horoscope", truncate(horoscope))));
-
-            // Step 5: Find mythology
-            events.add(publishEvent(AgentEvent.agentInvoked("goap", "storyFinder", "Finding mythology...")));
-            String mythology = storyFinder.findStories(sign);
-            scope.put("mythology", mythology);
-            events.add(publishEvent(AgentEvent.agentCompleted("goap", "storyFinder", truncate(mythology))));
-            events.add(publishEvent(AgentEvent.stateUpdated("goap", "mythology", truncate(mythology))));
-
-            // Step 6: Compose final writeup
-            events.add(publishEvent(AgentEvent.agentInvoked("goap", "writerAgent", "Composing final writeup...")));
-            String writeup = writer.compose(personName, sign, horoscope, mythology);
+            String writeup = result.result();
+            
+            // Capture the final scope state
+            scope.putAll(listener.getScopeSnapshot());
             scope.put("writeup", writeup);
-            events.add(publishEvent(AgentEvent.agentCompleted("goap", "writerAgent", truncate(writeup))));
 
             events.add(publishEvent(AgentEvent.completed("goap", writeup)));
             return ExecutionResult.success(executionId, "goap", writeup, events, scope, startTime);
 
         } catch (Exception e) {
+            log.error("GOAP execution failed", e);
             events.add(publishEvent(AgentEvent.error("goap", null, e.getMessage())));
             return ExecutionResult.error(executionId, "goap", e.getMessage(), events, startTime);
         }
@@ -622,8 +577,8 @@ public class PatternExecutionService {
 
     /**
      * P2P PATTERN: Peer-to-Peer agent collaboration
-     * Uses AgenticServices.agentBuilder() for agents that activate when their inputs become available in shared state.
-     * Note: P2P requires manual orchestration for peer activation based on data dependencies.
+     * Uses P2PPlanner which automatically activates agents when their required inputs 
+     * become available in shared state. Continues until exit condition (score threshold) is met.
      */
     private ExecutionResult executeP2P(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -632,108 +587,97 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("p2p", "Starting P2P workflow using AgenticServices: Collaborative research network")));
+            events.add(publishEvent(AgentEvent.started("p2p", "Starting P2P workflow using P2PPlanner: Reactive peer collaboration")));
 
-            scope.put("topic", prompt);
+            // Create listener for real-time WebSocket events
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "p2p", events);
 
-            // Build peer agents using AgenticServices.agentBuilder() - proper LangChain4j way
+            // Build peer agents using AgenticServices.agentBuilder() with proper output keys
+            // P2PPlanner activates agents when their input dependencies become available
             LiteratureAgent literatureAgent = AgenticServices.agentBuilder(LiteratureAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("researchFindings")  // topic -> researchFindings
                     .build();
 
             HypothesisAgent hypothesisAgent = AgenticServices.agentBuilder(HypothesisAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("hypothesis")  // researchFindings -> hypothesis
                     .build();
 
             CriticAgent criticAgent = AgenticServices.agentBuilder(CriticAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("critique")  // hypothesis -> critique
                     .build();
 
             ValidationAgent validationAgent = AgenticServices.agentBuilder(ValidationAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("hypothesis")  // hypothesis, critique -> refined hypothesis
                     .build();
 
             ScorerAgent scorerAgent = AgenticServices.agentBuilder(ScorerAgent.class)
                     .chatModel(chatModel)
+                    .outputKey("score")  // hypothesis -> score
                     .build();
 
-            SynthesizerAgent synthesizer = AgenticServices.agentBuilder(SynthesizerAgent.class)
-                    .chatModel(chatModel)
+            // Build P2P workflow using plannerBuilder with P2PPlanner
+            // The planner will:
+            // 1. Activate agents reactively when their inputs become available
+            // 2. Continue iterating until exit condition is met (score >= 0.75)
+            // 3. Max 10 agent invocations to prevent infinite loops
+            final double targetScore = 0.75;
+            
+            UntypedAgent p2pWorkflow = AgenticServices.plannerBuilder()
+                    .subAgents(literatureAgent, hypothesisAgent, criticAgent, validationAgent, scorerAgent)
+                    .outputKey("hypothesis")  // Final output we want
+                    .planner(() -> new P2PPlanner(plannerModel, 10, agenticScope -> {
+                        // Exit condition: score threshold reached
+                        if (!agenticScope.hasState("score")) {
+                            return false;
+                        }
+                        Double score = agenticScope.readState("score", 0.0);
+                        log.info("P2P current hypothesis score: {}", score);
+                        return score >= targetScore;
+                    }))
+                    .listener(listener)
                     .build();
 
-            int maxRounds = 2;
-            double targetScore = 0.85;
-            double score = 0.0;
-            String research = null;
-            String hypothesis = null;
-            String critique = null;
-            String validation = null;
-            String scoreResult = null;
+            scope.put("topic", prompt);
+            events.add(publishEvent(AgentEvent.stateUpdated("p2p", "topic", truncate(prompt))));
+            events.add(publishEvent(AgentEvent.stateUpdated("p2p", "targetScore", String.valueOf(targetScore))));
 
-            for (int round = 1; round <= maxRounds && score < targetScore; round++) {
-                scope.put("round", round);
-                events.add(publishEvent(AgentEvent.stateUpdated("p2p", "round", String.valueOf(round))));
+            // Execute the P2P workflow - agents activate reactively based on available state
+            events.add(publishEvent(AgentEvent.agentInvoked("p2p", "p2pPlanner", "Starting reactive peer collaboration...")));
+            ResultWithAgenticScope<String> result = p2pWorkflow.invokeWithAgenticScope(Map.of("topic", prompt));
 
-                // Peer 1: Literature research (activates when topic is available)
-                if (research == null) {
-                    events.add(publishEvent(AgentEvent.agentInvoked("p2p", "literatureAgent", "Researching literature...")));
-                    research = literatureAgent.research(prompt);
-                    scope.put("research", research);
-                    events.add(publishEvent(AgentEvent.agentCompleted("p2p", "literatureAgent", truncate(research))));
-                    events.add(publishEvent(AgentEvent.stateUpdated("p2p", "researchFindings", truncate(research))));
-                }
+            String hypothesis = result.result();
+            
+            // Capture the final scope state
+            scope.putAll(listener.getScopeSnapshot());
+            
+            // Get final score from scope
+            Double finalScore = result.agenticScope().readState("score", 0.0);
+            scope.put("finalScore", finalScore);
+            events.add(publishEvent(AgentEvent.stateUpdated("p2p", "finalScore", String.format("%.2f", finalScore))));
 
-                // Peer 2: Formulate hypothesis (activates when research is available)
-                events.add(publishEvent(AgentEvent.agentInvoked("p2p", "hypothesisAgent", "Formulating hypothesis...")));
-                String previousValidation = validation;
-                if (previousValidation != null) {
-                    research = research + "\n\nPrevious feedback:\n" + previousValidation;
-                }
-                hypothesis = hypothesisAgent.formulate(research);
-                scope.put("hypothesis", hypothesis);
-                events.add(publishEvent(AgentEvent.agentCompleted("p2p", "hypothesisAgent", truncate(hypothesis))));
-                events.add(publishEvent(AgentEvent.stateUpdated("p2p", "hypothesis", truncate(hypothesis))));
+            // Format final output
+            String finalOutput = String.format("""
+                ## P2P Research Results
+                
+                **Final Hypothesis:** %s
+                
+                **Quality Score:** %.2f / 1.0
+                
+                **Status:** %s
+                """, 
+                hypothesis, 
+                finalScore, 
+                finalScore >= targetScore ? "✓ Target score reached!" : "Max iterations reached");
 
-                // Peer 3: Critique (activates when hypothesis is available)
-                events.add(publishEvent(AgentEvent.agentInvoked("p2p", "criticAgent", "Critiquing hypothesis...")));
-                critique = criticAgent.critique(hypothesis);
-                scope.put("critique", critique);
-                events.add(publishEvent(AgentEvent.agentCompleted("p2p", "criticAgent", truncate(critique))));
-                events.add(publishEvent(AgentEvent.stateUpdated("p2p", "critique", truncate(critique))));
-
-                // Peer 4: Validate (activates when hypothesis AND critique are available)
-                events.add(publishEvent(AgentEvent.agentInvoked("p2p", "validationAgent", "Validating hypothesis...")));
-                validation = validationAgent.validate(hypothesis, critique);
-                scope.put("validation", validation);
-                events.add(publishEvent(AgentEvent.agentCompleted("p2p", "validationAgent", truncate(validation))));
-                events.add(publishEvent(AgentEvent.stateUpdated("p2p", "validation", truncate(validation))));
-
-                // Peer 5: Score (activates when validation is available)
-                events.add(publishEvent(AgentEvent.agentInvoked("p2p", "scorerAgent", "Scoring hypothesis...")));
-                scoreResult = scorerAgent.score(validation);
-                scope.put("scoreResult", scoreResult);
-                events.add(publishEvent(AgentEvent.agentCompleted("p2p", "scorerAgent", truncate(scoreResult))));
-
-                score = parseScore(scoreResult);
-                scope.put("score", score);
-                events.add(publishEvent(AgentEvent.stateUpdated("p2p", "score", String.format("%.2f", score))));
-
-                if (score >= targetScore) {
-                    events.add(publishEvent(AgentEvent.stateUpdated("p2p", "status", "Target score reached! ✓")));
-                    break;
-                }
-            }
-
-            // Synthesize final report
-            events.add(publishEvent(AgentEvent.agentInvoked("p2p", "synthesizer", "Synthesizing final report...")));
-            String report = synthesizer.synthesize(research, hypothesis, critique, validation, scoreResult);
-            scope.put("finalReport", report);
-            events.add(publishEvent(AgentEvent.agentCompleted("p2p", "synthesizer", truncate(report))));
-
-            events.add(publishEvent(AgentEvent.completed("p2p", report)));
-            return ExecutionResult.success(executionId, "p2p", report, events, scope, startTime);
+            events.add(publishEvent(AgentEvent.completed("p2p", finalOutput)));
+            return ExecutionResult.success(executionId, "p2p", finalOutput, events, scope, startTime);
 
         } catch (Exception e) {
+            log.error("P2P execution failed", e);
             events.add(publishEvent(AgentEvent.error("p2p", null, e.getMessage())));
             return ExecutionResult.error(executionId, "p2p", e.getMessage(), events, startTime);
         }
@@ -744,24 +688,6 @@ public class PatternExecutionService {
     private AgentEvent publishEvent(AgentEvent event) {
         eventPublisher.publish(event);
         return event;
-    }
-
-    private double parseScore(String text) {
-        try {
-            // Look for "SCORE: X.X" pattern
-            for (String line : text.split("\n")) {
-                if (line.toUpperCase().contains("SCORE")) {
-                    String[] parts = line.split(":");
-                    if (parts.length > 1) {
-                        String scoreStr = parts[1].trim().replaceAll("[^0-9.]", "");
-                        if (!scoreStr.isEmpty()) {
-                            return Math.min(1.0, Double.parseDouble(scoreStr));
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {}
-        return 0.6; // Default score
     }
 
     private String truncate(String text) {

@@ -50,6 +50,13 @@
             <version>1.10.0-beta18</version>
         </dependency>
 
+        <!-- LangChain4j Agentic Patterns (GOAP, P2P) -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic-patterns</artifactId>
+            <version>1.10.0-beta18</version>
+        </dependency>
+
         <!-- OpenAI Official SDK Provider (supports Azure OpenAI) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

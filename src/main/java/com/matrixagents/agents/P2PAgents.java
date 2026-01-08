@@ -7,17 +7,19 @@ import dev.langchain4j.service.V;
 
 /**
  * Agents for the P2P (Peer-to-Peer) PATTERN using langchain4j-agentic module.
- * Demonstrates collaborative agent network where agents communicate as peers.
- * Pattern: Agents activate when their required inputs become available in shared state.
  * 
- * Uses @Agent annotation with state-based activation for peer collaboration.
+ * P2P uses P2PPlanner which automatically:
+ * 1. Activates agents when their required inputs become available in shared state
+ * 2. Uses state-based triggering (reactive) rather than predetermined sequence
+ * 3. Continues until an exit condition is met (e.g., score threshold)
+ * 
+ * Key: Each agent's @V parameters define when they can activate (inputs available).
  */
 public interface P2PAgents {
 
     /**
      * LiteratureAgent: Searches and summarizes relevant research.
-     * Activates when: topic is available
-     * Output key: "research"
+     * Input: topic -> Output: researchFindings
      */
     interface LiteratureAgent {
         @SystemMessage("""
@@ -30,17 +32,16 @@ public interface P2PAgents {
             - Gaps in current knowledge
             - Recent developments
             
-            Be thorough but concise. Cite conceptual sources.
+            Be thorough but concise (3-4 paragraphs).
             """)
         @UserMessage("Research the current state of knowledge on: {{topic}}")
-        @Agent(description = "Researches and summarizes literature on a topic", outputKey = "research")
+        @Agent("Research and summarize literature on a topic")
         String research(@V("topic") String topic);
     }
 
     /**
      * HypothesisAgent: Formulates hypotheses based on research.
-     * Activates when: research is available
-     * Output key: "hypothesis"
+     * Input: researchFindings -> Output: hypothesis
      */
     interface HypothesisAgent {
         @SystemMessage("""
@@ -51,7 +52,6 @@ public interface P2PAgents {
             - Address a gap in knowledge
             - Be specific and measurable
             - Be logically derived from the research
-            - Include reasoning for why this hypothesis is promising
             
             Format:
             HYPOTHESIS: [Clear statement]
@@ -61,16 +61,15 @@ public interface P2PAgents {
         @UserMessage("""
             Based on this research, formulate a hypothesis:
             
-            {{research}}
+            {{researchFindings}}
             """)
-        @Agent(description = "Formulates hypotheses based on research", outputKey = "hypothesis")
-        String formulate(@V("research") String research);
+        @Agent("Formulate hypothesis based on research findings")
+        String formulate(@V("researchFindings") String researchFindings);
     }
 
     /**
      * CriticAgent: Critiques hypotheses and identifies weaknesses.
-     * Activates when: hypothesis is available
-     * Output key: "critique"
+     * Input: hypothesis -> Output: critique
      */
     interface CriticAgent {
         @SystemMessage("""
@@ -82,7 +81,6 @@ public interface P2PAgents {
             - Testability issues
             - Alternative explanations
             - Potential confounds
-            - Scope limitations
             
             Format:
             STRENGTHS: [What's good]
@@ -94,14 +92,13 @@ public interface P2PAgents {
             
             {{hypothesis}}
             """)
-        @Agent(description = "Critiques hypotheses and identifies weaknesses", outputKey = "critique")
+        @Agent("Critique hypothesis and identify weaknesses")
         String critique(@V("hypothesis") String hypothesis);
     }
 
     /**
      * ValidationAgent: Validates or reformulates based on critique.
-     * Activates when: hypothesis AND critique are available
-     * Output key: "validation"
+     * Inputs: hypothesis, critique -> Output: hypothesis (refined)
      */
     interface ValidationAgent {
         @SystemMessage("""
@@ -125,14 +122,13 @@ public interface P2PAgents {
             CRITIQUE:
             {{critique}}
             """)
-        @Agent(description = "Validates or reformulates hypotheses based on critique", outputKey = "validation")
+        @Agent("Validate or reformulate hypothesis based on critique")
         String validate(@V("hypothesis") String hypothesis, @V("critique") String critique);
     }
 
     /**
-     * ScorerAgent: Scores the quality of the validated hypothesis.
-     * Activates when: validation is available
-     * Output key: "score"
+     * ScorerAgent: Scores the quality of the hypothesis.
+     * Input: hypothesis -> Output: score (Double)
      */
     interface ScorerAgent {
         @SystemMessage("""
@@ -144,65 +140,16 @@ public interface P2PAgents {
             - Logical soundness (0-0.2): Is the reasoning valid?
             - Impact potential (0-0.2): If true, would it be significant?
             
-            IMPORTANT: Start your response with "SCORE: X.XX" where X.XX is the total (0.0-1.0)
-            Then provide the breakdown.
+            IMPORTANT: Return ONLY a number between 0.0 and 1.0 representing the total score.
+            Example: 0.75
             """)
-        @UserMessage("""
-            Score this hypothesis:
-            
-            {{hypothesis}}
-            """)
-        @Agent(description = "Scores the quality of hypotheses", outputKey = "score")
-        String score(@V("hypothesis") String hypothesis);
+        @UserMessage("Score this hypothesis (return only a number 0.0-1.0): {{hypothesis}}")
+        @Agent("Score the quality of a hypothesis")
+        Double score(@V("hypothesis") String hypothesis);
     }
 
     /**
-     * SynthesizerAgent: Creates the final research output from all peer contributions.
-     * Activates when: all outputs are available (research, hypothesis, critique, validation, score)
-     * Output key: "report"
-     */
-    interface SynthesizerAgent {
-        @SystemMessage("""
-            You are a research synthesizer. Combine all the peer contributions into
-            a cohesive research summary.
-            
-            Include:
-            1. Executive Summary
-            2. Background (from literature research)
-            3. Proposed Hypothesis
-            4. Critical Analysis
-            5. Validation Results
-            6. Quality Assessment
-            7. Recommendations for Next Steps
-            
-            Make it professional and well-structured.
-            """)
-        @UserMessage("""
-            Synthesize this peer research:
-            
-            LITERATURE RESEARCH:
-            {{research}}
-            
-            HYPOTHESIS:
-            {{hypothesis}}
-            
-            CRITIQUE:
-            {{critique}}
-            
-            VALIDATION:
-            {{validation}}
-            
-            SCORE: {{score}}
-            """)
-        @Agent(description = "Synthesizes research from all peer contributions", outputKey = "report")
-        String synthesize(@V("research") String research, @V("hypothesis") String hypothesis,
-                          @V("critique") String critique, @V("validation") String validation,
-                          @V("score") String score);
-    }
-
-    /**
-     * ResearchWorkflow: Typed interface for the P2P collaborative workflow.
-     * Peers activate based on available state and collaborate towards research report.
+     * Typed interface for the P2P workflow.
      */
     interface ResearchWorkflow {
         @Agent
