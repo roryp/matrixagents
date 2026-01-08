@@ -229,18 +229,50 @@ All 8 patterns in this showcase use **LangChain4j's `AgenticServices`** builders
 - **Agent invocation tracking** for debugging
 - **Real-time events** via `AgentListener` for WebSocket streaming
 
+#### Two Equivalent Approaches: Programmatic vs Declarative
+
+LangChain4j's Agentic framework offers **two equivalent and interchangeable approaches** for building agent workflows:
+
+| Approach | Method | Best For |
+|----------|--------|----------|
+| **Programmatic** | Builder APIs (`sequenceBuilder()`, `loopBuilder()`, etc.) | Dynamic workflows, runtime configuration, complex orchestration |
+| **Declarative** | Annotations + `createAgenticSystem()` | Simple, readable definitions, compile-time validation |
+
+**Both approaches are fully equivalent** — you can achieve the same results with either, and you can even **mix them** in the same application (as this showcase demonstrates).
+
+**Programmatic Example:**
+```java
+UntypedAgent workflow = AgenticServices.sequenceBuilder()
+    .name("myWorkflow")
+    .subAgents(agent1, agent2, agent3)
+    .listener(listener)
+    .build();
+```
+
+**Declarative Example:**
+```java
+@Agent(description = "Orchestrates multiple experts")
+interface MyWorkflow {
+    @Parallel  // or @Sequential, @Conditional, etc.
+    String process(@State("input") String input);
+}
+MyWorkflow workflow = AgenticServices.createAgenticSystem(MyWorkflow.class, model);
+```
+
 #### Pattern Implementation Summary
 
-| Pattern | Builder Used | AgenticScope Access |
-|---------|-------------|---------------------|
-| **Sequence** | `AgenticServices.sequenceBuilder()` | `invokeWithAgenticScope()` |
-| **Parallel** | `AgenticServices.createAgenticSystem()` | Internal (annotation-driven) |
-| **Loop** | `AgenticServices.loopBuilder()` | `invokeWithAgenticScope()` |
-| **Conditional** | `AgenticServices.createAgenticSystem()` | Internal (annotation-driven) |
-| **Supervisor** | `AgenticServices.supervisorBuilder()` | Internal (LLM-driven) |
-| **Human-in-Loop** | `AgenticServices.agentBuilder()` | Manual orchestration for human wait |
-| **GOAP** | `AgenticServices.plannerBuilder()` + `GoalOrientedPlanner` | `invokeWithAgenticScope()` |
-| **P2P** | `AgenticServices.plannerBuilder()` + `P2PPlanner` | `invokeWithAgenticScope()` |
+| Pattern | Approach | API Used |
+|---------|----------|----------|
+| **Sequence** | Programmatic | `AgenticServices.sequenceBuilder()` |
+| **Parallel** | Declarative | `AgenticServices.createAgenticSystem()` with `@Parallel` |
+| **Loop** | Programmatic | `AgenticServices.loopBuilder()` |
+| **Conditional** | Declarative | `AgenticServices.createAgenticSystem()` with `@Conditional` |
+| **Supervisor** | Programmatic | `AgenticServices.supervisorBuilder()` |
+| **Human-in-Loop** | Programmatic | `AgenticServices.agentBuilder()` |
+| **GOAP** | Programmatic | `AgenticServices.plannerBuilder()` + `GoalOrientedPlanner` |
+| **P2P** | Programmatic | `AgenticServices.plannerBuilder()` + `P2PPlanner` |
+
+> **Note:** This showcase intentionally uses both approaches to demonstrate their equivalence. You could rewrite the Parallel pattern using `sequenceBuilder()` + manual parallel execution, or rewrite the Sequence pattern using annotations — the choice is purely stylistic.
 
 #### Real-Time WebSocket Events with AgentListener
 
