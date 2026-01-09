@@ -128,7 +128,7 @@ public record PatternInfo(
         return new PatternInfo(
             "p2p",
             "Peer-to-Peer (P2P)",
-            "Decentralized agent coordination where agents react to state changes and collaborate autonomously.",
+            "Decentralized agent coordination where agents react to state changes and collaborate autonomously. Runs until consensus score reaches 0.75 threshold.",
             "planning",
             List.of("LiteratureAgent", "HypothesisAgent", "CriticAgent", "ValidationAgent", "ScorerAgent"),
             Map.of("type", "P2P", "edges", List.of(
