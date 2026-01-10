@@ -1,0 +1,52 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Conditional Pattern (Branch Topology)
+
+actor User
+participant "Router" as router #3b82f6
+participant "TechnicalExpert" as tech #10b981
+participant "MedicalExpert" as med #ec4899
+participant "LegalExpert" as legal #f59e0b
+database "AgenticScope" as scope
+
+User -> router : query: "I have chest pain"
+activate router
+
+router -> router : analyze query category
+router -> scope : write("category", "medical")
+
+alt category == "technical"
+    router -> tech : query
+    activate tech
+    tech -> scope : write("answer", response)
+    tech -> User : technical answer
+    deactivate tech
+else category == "medical"
+    router -> med : query
+    activate med
+    med -> scope : write("answer", response)
+    med -> User : medical answer
+    deactivate med
+else category == "legal"
+    router -> legal : query
+    activate legal
+    legal -> scope : write("answer", response)
+    legal -> User : legal answer
+    deactivate legal
+end
+
+deactivate router
+
+note right of scope
+  Conditional routing:
+  - Router analyzes input
+  - Routes to specialist agent
+  - Different paths for
+    different input types
+end note
+
+@enduml

@@ -1,0 +1,59 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title GOAP Pattern (DAG - Directed Acyclic Graph)
+
+actor User
+participant "GOAP Planner" as planner #ec4899
+participant "SignExtractor" as sign #3b82f6
+participant "HoroscopeGenerator" as horo #3b82f6
+participant "StoryFinder" as story #3b82f6
+participant "WriterAgent" as writer #3b82f6
+database "AgenticScope" as scope
+
+User -> planner : "Generate personalized horoscope\nfor March 15th birthday"
+activate planner
+
+planner -> planner : Calculate dependency graph:\n SignExtractor -> (HoroscopeGen || StoryFinder) -> Writer
+
+planner -> sign : birthdate: "March 15"
+activate sign
+sign -> scope : write("zodiacSign", "Pisces")
+sign -> planner : "Pisces"
+deactivate sign
+
+par Parallel execution
+    planner -> horo : zodiacSign: "Pisces"
+    activate horo
+    horo -> scope : write("horoscope", content)
+    horo -> planner : horoscope
+    deactivate horo
+else
+    planner -> story : zodiacSign: "Pisces"
+    activate story
+    story -> scope : write("stories", myths)
+    story -> planner : stories
+    deactivate story
+end
+
+planner -> writer : read("horoscope", "stories")
+activate writer
+writer -> scope : write("writeup", final)
+writer -> User : "Personalized Pisces horoscope\nwith mythology..."
+deactivate writer
+
+deactivate planner
+
+note right of scope
+  GOAP planning:
+  - Analyzes goal state
+  - Calculates dependencies
+  - Finds optimal path (DAG)
+  - Executes in efficient order
+  - Parallelizes when possible
+end note
+
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Sequential Pattern (Chain Topology)
+
+actor User
+participant "CreativeWriter" as writer #3b82f6
+participant "AudienceEditor" as audience #3b82f6
+participant "StyleEditor" as style #3b82f6
+database "AgenticScope" as scope
+
+User -> writer : topic: "fantasy story"
+activate writer
+writer -> scope : write("story", draft)
+writer -> audience : story
+deactivate writer
+
+activate audience
+audience -> scope : write("story", edited)
+audience -> style : story
+deactivate audience
+
+activate style
+style -> scope : write("story", final)
+style -> User : final story
+deactivate style
+
+note right of scope
+  State flows sequentially:
+  1. Writer generates draft
+  2. Audience adapts for target
+  3. Style applies final polish
+end note
+
+@enduml
