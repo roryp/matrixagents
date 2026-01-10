@@ -1,0 +1,40 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Parallel Pattern (Fan-out Topology)
+
+actor User
+participant "FoodExpert" as food #3b82f6
+participant "MovieExpert" as movie #3b82f6
+participant "Output Combiner" as combiner #10b981
+database "AgenticScope" as scope
+
+User -> food : mood: "romantic"
+User -> movie : mood: "romantic"
+
+activate food
+activate movie
+
+food -> scope : write("meals", [meal1, meal2, meal3])
+movie -> scope : write("movies", [movie1, movie2, movie3])
+
+deactivate food
+deactivate movie
+
+scope -> combiner : read("meals", "movies")
+activate combiner
+combiner -> User : EveningPlan[(movie1, meal1), (movie2, meal2), (movie3, meal3)]
+deactivate combiner
+
+note right of scope
+  Parallel execution:
+  - FoodExpert and MovieExpert
+    run simultaneously
+  - Results combined after
+    both complete
+end note
+
+@enduml

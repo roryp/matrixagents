@@ -25,25 +25,34 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Patterns Demonstrated
 
+### High-Level Architecture
+
+![High-Level Architecture](http://www.plantuml.com/plantuml/png/ZLHTRzim57tFhxZeKq7l1HLLWee4e2YW4ejrCOKIswRPqxQMc9lxxtjxTIaXnGJMbZtptVVap-V6LGf2KPnJI5U92Mjj0G42Ws4Y4uG5AoW2-8GO34WCnKHXYGemX4f2GX8n4YZ64D7VrpqQDuPF6PZmN6WDqbmGWiWdQV9WDiHtDgfCsJKQU6qBPdvqEbEVzKXxKdVyQSZzAMbL2TT5LQfrC9cQ6j8bW5eKGXgHWBGa-qbmaQR5TY_5jImhgXWbHU-7cXkH-cG9WDVs3fKfZfbgfLDJJ8bLNBH5uPP5wPdBz7L9NOwKcNh8xI1IK3QrEYrEp4RLxIbAv8TqUqjviqxPqPqRvpPqRqRvjvzvzqTvjvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqPqPqRqRvpvqRvjqPqPqRvpvqTvjvjqTvjqP)
+
+This architecture showcases **8 distinct agentic patterns** implemented using LangChain4j, each optimized for different orchestration needs.
+
 ### Workflow Patterns (Deterministic Orchestration)
-| Pattern | Description | Topology |
-|---------|-------------|----------|
-| **Sequential** | Agents invoked one after another in order | Chain |
-| **Parallel** | Multiple agents run simultaneously | Fan-out |
-| **Loop** | Iterative refinement until exit condition | Cycle |
-| **Conditional** | Routes to different agents based on conditions | Branch |
+
+| Pattern | Description | Topology | Diagram |
+|---------|-------------|----------|---------|
+| **Sequential** | Agents invoked one after another in order | Chain | ![Sequential](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsf2SK5-VcfEJYqkJYx9pC_FoqyjBCXCKWjJY58B4bCIyr90LWa0) |
+| **Parallel** | Multiple agents run simultaneously | Fan-out | ![Parallel](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU0GwfUIb0Cm00) |
+| **Loop** | Iterative refinement until exit condition | Cycle | ![Loop](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1LB8ICt9pCzJ0Li5AmG0) |
+| **Conditional** | Routes to different agents based on conditions | Branch | ![Conditional](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1G00) |
 
 ### Agentic Patterns (LLM-Driven Orchestration)
-| Pattern | Description | Topology |
-|---------|-------------|----------|
-| **Supervisor** | LLM plans and orchestrates sub-agents | Star |
-| **Human-in-the-Loop** | Pauses for human approval | Gated |
+
+| Pattern | Description | Topology | Diagram |
+|---------|-------------|----------|---------|
+| **Supervisor** | LLM plans and orchestrates sub-agents | Star | ![Supervisor](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1Ogg0G00) |
+| **Human-in-the-Loop** | Pauses for human approval | Gated | ![Human-in-Loop](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1LBpIl9BCalFIL5AJCilpQbvgK31SK50000) |
 
 ### Planning Patterns (Custom Planners)
-| Pattern | Description | Topology |
-|---------|-------------|----------|
-| **GOAP** | Goal-Oriented Action Planning | DAG |
-| **P2P** | Peer-to-peer decentralized coordination | Mesh |
+
+| Pattern | Description | Topology | Diagram |
+|---------|-------------|----------|---------|
+| **GOAP** | Goal-Oriented Action Planning | DAG | ![GOAP](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1G80) |
+| **P2P** | Peer-to-peer decentralized coordination | Mesh | ![P2P](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKhEIImkLd3EoKpDAr5mICqhKT2rKt3CoKnELT2rKt3AJx9I24ejB4qjBk42L8OKdfEQb5gKM9oPdbXGe99Qav-Qb5cSMboGM9UQbmAc5gHebPkNGsfU1OgwkdOXPmG0) |
 
 ## Beginner's Guide to Agentic Patterns
 

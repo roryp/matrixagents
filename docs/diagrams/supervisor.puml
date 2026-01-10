@@ -1,0 +1,51 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Supervisor Pattern (Star Topology)
+
+actor User
+participant "BankSupervisor" as supervisor #8b5cf6
+participant "WithdrawAgent" as withdraw #3b82f6
+participant "CreditAgent" as credit #3b82f6
+participant "ExchangeAgent" as exchange #3b82f6
+database "AgenticScope" as scope
+
+User -> supervisor : "Transfer 100 USD from Mario to Georgios,\nthen convert 50 USD to EUR"
+activate supervisor
+
+supervisor -> supervisor : LLM plans tasks:\n1. Withdraw\n2. Credit\n3. Exchange
+
+supervisor -> withdraw : withdraw(Mario, 100 USD)
+activate withdraw
+withdraw -> scope : write("transaction1", "withdrawn 100 USD")
+withdraw -> supervisor : success
+deactivate withdraw
+
+supervisor -> credit : credit(Georgios, 100 USD)
+activate credit
+credit -> scope : write("transaction2", "credited 100 USD")
+credit -> supervisor : success
+deactivate credit
+
+supervisor -> exchange : exchange(50 USD, EUR)
+activate exchange
+exchange -> scope : write("transaction3", "exchanged to EUR")
+exchange -> supervisor : success
+deactivate exchange
+
+supervisor -> scope : write("result", "all tasks completed")
+supervisor -> User : "Transferred 100 USD to Georgios\nand exchanged 50 USD to EUR"
+deactivate supervisor
+
+note right of scope
+  Supervisor orchestration:
+  - LLM analyzes complex request
+  - Plans subtasks dynamically
+  - Delegates to specialist agents
+  - Combines results
+end note
+
+@enduml

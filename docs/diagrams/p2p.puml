@@ -1,0 +1,66 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title P2P Pattern (Mesh Topology - Peer-to-Peer)
+
+actor User
+participant "LiteratureAgent" as lit #ec4899
+participant "HypothesisAgent" as hypo #ec4899
+participant "CriticAgent" as critic #ec4899
+participant "ValidationAgent" as valid #ec4899
+participant "ScorerAgent" as scorer #ec4899
+database "AgenticScope" as scope
+
+User -> lit : topic: "AI in healthcare startups"
+activate lit
+lit -> scope : write("research", findings)
+lit -> hypo : research
+deactivate lit
+
+activate hypo
+hypo -> scope : write("hypothesis", idea)
+hypo -> critic : hypothesis
+deactivate hypo
+
+loop until score >= 0.75
+    activate critic
+    critic -> scope : write("critique", feedback)
+    critic -> valid : critique
+    deactivate critic
+    
+    activate valid
+    valid -> scope : write("hypothesis", refined)
+    valid -> scorer : hypothesis
+    deactivate valid
+    
+    activate scorer
+    scorer -> scope : write("score", rating)
+    deactivate scorer
+    
+    alt score < 0.75
+        scope -> hypo : read("critique", "hypothesis")
+        activate hypo
+        hypo -> scope : write("hypothesis", improved)
+        hypo -> critic : hypothesis
+        deactivate hypo
+    end
+end
+
+scope -> User : validated hypothesis (score >= 0.75)
+
+note right of scope
+  P2P collaboration:
+  - Agents react to each other
+  - No central controller
+  - Emergent behavior
+  - Iterate until quality threshold
+  
+  Topology: Mesh
+  Each agent can interact
+  with any other agent
+end note
+
+@enduml

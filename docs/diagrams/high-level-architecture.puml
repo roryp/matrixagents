@@ -1,0 +1,68 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+skinparam rectangleBackgroundColor #2d2d2d
+skinparam rectangleBorderColor #60a5fa
+
+title AI Agents - LangChain4j Agentic Patterns Architecture
+
+package "Workflow Patterns\n(Deterministic)" #2d3748 {
+  rectangle "Sequential\n(Chain)" as seq #3b82f6
+  rectangle "Parallel\n(Fan-out)" as par #3b82f6
+  rectangle "Loop\n(Cycle)" as loop #3b82f6
+  rectangle "Conditional\n(Branch)" as cond #3b82f6
+}
+
+package "Agentic Patterns\n(LLM-Driven)" #2d3748 {
+  rectangle "Supervisor\n(Star)" as sup #8b5cf6
+  rectangle "Human-in-Loop\n(Gated)" as hil #8b5cf6
+}
+
+package "Planning Patterns\n(Custom Planners)" #2d3748 {
+  rectangle "GOAP\n(DAG)" as goap #ec4899
+  rectangle "P2P\n(Mesh)" as p2p #ec4899
+}
+
+cloud "Azure OpenAI\nGPT-4" as llm #10b981
+database "AgenticScope\n(Shared State)" as scope #f59e0b
+actor "User" as user
+
+user --> seq
+user --> par
+user --> loop
+user --> cond
+user --> sup
+user --> hil
+user --> goap
+user --> p2p
+
+seq --> llm
+par --> llm
+loop --> llm
+cond --> llm
+sup --> llm
+hil --> llm
+goap --> llm
+p2p --> llm
+
+seq ..> scope : read/write
+par ..> scope : read/write
+loop ..> scope : read/write
+cond ..> scope : read/write
+sup ..> scope : read/write
+hil ..> scope : read/write
+goap ..> scope : read/write
+p2p ..> scope : read/write
+
+note right of scope
+  All patterns share state
+  via AgenticScope for:
+  - State management
+  - Output key mapping
+  - Agent tracking
+  - Real-time events
+end note
+
+@enduml

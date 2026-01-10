@@ -1,0 +1,45 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Human-in-the-Loop Pattern (Gated Topology)
+
+actor User
+participant "InputAgent" as input #8b5cf6
+actor "Human" as human #10b981
+participant "ProcessAgent" as process #8b5cf6
+database "AgenticScope" as scope
+
+User -> input : "What is the zodiac"
+activate input
+input -> scope : write("query", "zodiac request")
+input -> human : "What is your zodiac sign?"
+deactivate input
+
+activate human
+human -> human : reviews and decides
+human -> scope : write("zodiacSign", "Aries")
+human -> process : zodiacSign: "Aries"
+deactivate human
+
+activate process
+process -> scope : write("horoscope", generated)
+process -> User : "Aries horoscope: You will have\na great day full of opportunities..."
+deactivate process
+
+note right of scope
+  Human-in-the-loop:
+  - Agent requests human input
+  - Execution pauses
+  - Human provides decision/data
+  - Agent continues with input
+  
+  Use cases:
+  - High-stakes decisions
+  - Legal/compliance approval
+  - Expert judgment needed
+end note
+
+@enduml

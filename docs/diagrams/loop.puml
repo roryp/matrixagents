@@ -1,0 +1,46 @@
+@startuml
+!theme mars
+skinparam backgroundColor #1a1a1a
+skinparam DefaultFontColor white
+skinparam ArrowColor #60a5fa
+
+title Loop Pattern (Cycle Topology)
+
+actor User
+participant "Generator" as gen #3b82f6
+participant "Critic" as critic #3b82f6
+participant "Refiner" as refiner #3b82f6
+database "AgenticScope" as scope
+
+User -> gen : topic: "haiku about coding"
+activate gen
+gen -> scope : write("haiku", draft)
+gen -> critic : haiku
+deactivate gen
+
+loop until score >= 8.0
+    activate critic
+    critic -> scope : write("score", rating)
+    critic -> scope : write("critique", feedback)
+    deactivate critic
+    
+    alt score < 8.0
+        scope -> refiner : read("haiku", "critique")
+        activate refiner
+        refiner -> scope : write("haiku", improved)
+        refiner -> critic : haiku
+        deactivate refiner
+    end
+end
+
+scope -> User : final haiku (score >= 8.0)
+
+note right of scope
+  Iterative refinement:
+  1. Generator creates draft
+  2. Critic evaluates (score)
+  3. Refiner improves
+  4. Repeat until threshold met
+end note
+
+@enduml
