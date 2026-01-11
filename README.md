@@ -25,6 +25,8 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Patterns Demonstrated
 
+![Agentic Patterns Overview](docs/patterns.png)
+
 ### Workflow Patterns (Deterministic Orchestration)
 | Pattern | Description | Topology |
 |---------|-------------|----------|
@@ -438,28 +440,7 @@ This application includes full Azure infrastructure-as-code for one-click deploy
 
 ### Azure Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Azure Resource Group                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────────┐     ┌──────────────────────────────┐  │
-│  │ Container        │     │ Container Apps Environment   │  │
-│  │ Registry         │────▶│ ┌────────────────────────┐   │  │
-│  │                  │     │ │ AI Agents App          │   │  │
-│  └──────────────────┘     │ │ (Java 21 + React)      │   │  │
-│                           │ └────────────────────────┘   │  │
-│  ┌──────────────────┐     └──────────────────────────────┘  │
-│  │ Azure OpenAI     │                │                      │
-│  │ - gpt-5-mini     │◀───────────────┘                      │
-│  │ - text-embedding │                                       │
-│  └──────────────────┘     ┌──────────────────────────────┐  │
-│                           │ Monitoring                   │  │
-│                           │ - Log Analytics              │  │
-│                           │ - Application Insights       │  │
-│                           └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
+![Azure Architecture](docs/architecture.png)
 
 ### Clean Up Resources
 

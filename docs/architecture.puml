@@ -1,0 +1,32 @@
+@startuml architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle uml2
+
+title AI Agents - Azure Architecture
+
+package "Azure Resource Group" {
+    
+    component "Container Registry" as acr {
+    }
+    
+    package "Container Apps Environment" {
+        component "AI Agents App\n(Java 21 + React)" as app
+    }
+    
+    component "Azure OpenAI" as openai {
+        component "gpt-4o-mini" as gpt
+        component "text-embedding-3-small" as embed
+    }
+    
+    package "Monitoring" {
+        component "Log Analytics" as logs
+        component "Application Insights" as insights
+    }
+}
+
+acr --> app : deploy
+app --> openai : API calls
+app --> insights : telemetry
+
+@enduml
