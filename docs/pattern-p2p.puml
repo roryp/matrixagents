@@ -1,0 +1,20 @@
+@startuml p2p
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title P2P Pattern (Mesh)
+
+rectangle "Literature\nAgent" as p2p1 #PaleTurquoise
+rectangle "Hypothesis\nAgent" as p2p2 #PaleTurquoise
+rectangle "Critic\nAgent" as p2p3 #PaleTurquoise
+rectangle "Validation\nAgent" as p2p4 #PaleTurquoise
+rectangle "Scorer\nAgent" as p2p5 #PaleTurquoise
+
+p2p1 --> p2p2
+p2p2 --> p2p3
+p2p3 --> p2p4
+p2p4 --> p2p2 : reformulate
+p2p4 --> p2p5 : validated
+p2p5 --> p2p2 : score < 0.75
+
+@enduml

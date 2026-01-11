@@ -1,0 +1,16 @@
+@startuml supervisor
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Supervisor Pattern (Star)
+
+rectangle "Bank\nSupervisor" as sup #Thistle
+rectangle "Withdraw\nTool" as sup1 #Thistle
+rectangle "Credit\nTool" as sup2 #Thistle
+rectangle "Exchange\nTool" as sup3 #Thistle
+
+sup --> sup1
+sup --> sup2
+sup --> sup3
+
+@enduml

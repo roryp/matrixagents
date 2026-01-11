@@ -1,0 +1,17 @@
+@startuml goap
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title GOAP Pattern (DAG)
+
+rectangle "Sign\nExtractor" as goap1 #Plum
+rectangle "Horoscope\nGenerator" as goap2 #Plum
+rectangle "Story\nFinder" as goap3 #Plum
+rectangle "Writer\nAgent" as goap4 #Plum
+
+goap1 --> goap2
+goap1 --> goap3
+goap2 --> goap4
+goap3 --> goap4
+
+@enduml

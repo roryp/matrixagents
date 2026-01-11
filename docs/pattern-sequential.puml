@@ -1,0 +1,14 @@
+@startuml sequential
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Sequential Pattern (Chain)
+
+rectangle "Creative\nWriter" as seq1 #LightBlue
+rectangle "Audience\nEditor" as seq2 #LightBlue
+rectangle "Style\nEditor" as seq3 #LightBlue
+
+seq1 --> seq2 : story
+seq2 --> seq3 : edited story
+
+@enduml

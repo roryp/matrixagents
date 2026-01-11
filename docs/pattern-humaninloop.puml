@@ -1,0 +1,14 @@
+@startuml humaninloop
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Human-in-the-Loop Pattern (Gated)
+
+rectangle "Zodiac\nExtractor" as hil1 #PeachPuff
+rectangle "Human\nInput" as hil_h #PeachPuff
+rectangle "Horoscope\nAgent" as hil2 #PeachPuff
+
+hil1 --> hil_h : need sign
+hil_h --> hil2 : provide sign
+
+@enduml

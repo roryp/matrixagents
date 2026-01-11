@@ -1,0 +1,16 @@
+@startuml loop
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Loop Pattern (Cycle)
+
+rectangle "Creative\nWriter" as loop1 #LightYellow
+rectangle "Style\nScorer" as loop2 #LightYellow
+rectangle "Style\nEditor" as loop3 #LightYellow
+
+loop1 --> loop2 : generate
+loop2 --> loop3 : score < 0.8
+loop3 --> loop2 : refine
+loop2 -[#green]-> loop1 : score >= 0.8\n(exit)
+
+@enduml

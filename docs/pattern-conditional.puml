@@ -1,0 +1,16 @@
+@startuml conditional
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Conditional Pattern (Branch)
+
+rectangle "Category\nRouter" as cond_r #LightCoral
+rectangle "Medical\nExpert" as cond1 #LightCoral
+rectangle "Legal\nExpert" as cond2 #LightCoral
+rectangle "Technical\nExpert" as cond3 #LightCoral
+
+cond_r --> cond1 : MEDICAL
+cond_r --> cond2 : LEGAL
+cond_r --> cond3 : TECHNICAL
+
+@enduml

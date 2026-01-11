@@ -1,0 +1,17 @@
+@startuml parallel
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Parallel Pattern (Fan-out)
+
+rectangle "Input\n(mood)" as par_in #LightGreen
+rectangle "Food\nExpert" as par1 #LightGreen
+rectangle "Movie\nExpert" as par2 #LightGreen
+rectangle "Evening\nPlans" as par_out #LightGreen
+
+par_in --> par1
+par_in --> par2
+par1 --> par_out
+par2 --> par_out
+
+@enduml

@@ -81,6 +81,8 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 **Example prompt:** *"Write a fantasy story for teenagers in a humorous style"*
 - CreativeWriter → AudienceEditor → StyleEditor
 
+![Sequential Pattern](docs/sequential.png)
+
 ---
 
 #### 2. Parallel Workflow (Fan-out)
@@ -95,6 +97,8 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 **When to use:** When you need diverse perspectives quickly.
 
 **Example prompt:** *"Evaluate this startup idea: AI-powered pet translator"*
+
+![Parallel Pattern](docs/parallel.png)
 
 ---
 
@@ -112,6 +116,8 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 **Example prompt:** *"Write a haiku about coding"* (iterates until the critic gives 8+/10)
 
+![Loop Pattern](docs/loop.png)
+
 ---
 
 #### 4. Conditional Routing (Branch)
@@ -126,6 +132,8 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 **When to use:** When different inputs need different expertise.
 
 **Example prompt:** *"I have chest pain"* → routes to medical expert
+
+![Conditional Pattern](docs/conditional.png)
 
 ---
 
@@ -148,6 +156,8 @@ These patterns use **LLM intelligence** to decide how agents interact.
 **Example prompt:** *"Transfer 100 USD from Mario to Georgios, then convert 50 USD to EUR"*
 - BankSupervisor delegates to: WithdrawAgent, CreditAgent, ExchangeAgent
 
+![Supervisor Pattern](docs/supervisor.png)
+
 ---
 
 #### 6. Human-in-the-Loop (Gated)
@@ -164,6 +174,8 @@ These patterns use **LLM intelligence** to decide how agents interact.
 **Example prompt:** *"What is the zodiac"*
 - Asks human: "What is your zodiac sign?"
 - Uses human's answer to generate personalized horoscope
+
+![Human-in-the-Loop Pattern](docs/humaninloop.png)
 
 ---
 
@@ -185,6 +197,8 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 **Example prompt:** *"Generate a personalized horoscope for someone born on March 15th"*
 - GOAP calculates the dependency graph and executes: SignExtractor → (HoroscopeGenerator + StoryFinder in parallel) → WriterAgent
 
+![GOAP Pattern](docs/goap.png)
+
 ---
 
 #### 8. P2P - Peer-to-Peer (Mesh)
@@ -202,6 +216,8 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 **When to use:** Research, brainstorming, when you want emergent collaboration.
 
 **Example prompt:** *"Generate and evaluate startup ideas for AI in healthcare"*
+
+![P2P Pattern](docs/p2p.png)
 
 ---
 
