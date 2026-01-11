@@ -11,7 +11,7 @@ title LangChain4j Agentic Patterns
 package "Workflow Patterns (Deterministic)" {
     
     package "1. Sequential (Chain)" #LightBlue {
-        rectangle "Writer" as seq1
+        rectangle "Creative\nWriter" as seq1
         rectangle "Audience\nEditor" as seq2
         rectangle "Style\nEditor" as seq3
         seq1 --> seq2
@@ -20,36 +20,33 @@ package "Workflow Patterns (Deterministic)" {
     
     package "2. Parallel (Fan-out)" #LightGreen {
         rectangle "Input" as par_in
-        rectangle "Technical\nExpert" as par1
-        rectangle "Business\nExpert" as par2
-        rectangle "Creative\nExpert" as par3
-        rectangle "Output" as par_out
+        rectangle "Food\nExpert" as par1
+        rectangle "Movie\nExpert" as par2
+        rectangle "Evening\nPlans" as par_out
         par_in --> par1
         par_in --> par2
-        par_in --> par3
         par1 --> par_out
         par2 --> par_out
-        par3 --> par_out
     }
     
     package "3. Loop (Cycle)" #LightYellow {
-        rectangle "Generator" as loop1
-        rectangle "Critic" as loop2
-        rectangle "Refiner" as loop3
+        rectangle "Creative\nWriter" as loop1
+        rectangle "Style\nScorer" as loop2
+        rectangle "Style\nEditor" as loop3
         loop1 --> loop2 : generate
-        loop2 --> loop3 : review
+        loop2 --> loop3 : score < 0.8
         loop3 --> loop2 : refine
-        loop2 --> loop1 : iterate
+        loop2 -[#green]-> loop1 : score >= 0.8\n(exit)
     }
     
     package "4. Conditional (Branch)" #LightCoral {
-        rectangle "Router" as cond_r
-        rectangle "Agent A" as cond1
-        rectangle "Agent B" as cond2
-        rectangle "Agent C" as cond3
-        cond_r --> cond1 : condition A
-        cond_r --> cond2 : condition B
-        cond_r --> cond3 : condition C
+        rectangle "Category\nRouter" as cond_r
+        rectangle "Medical\nExpert" as cond1
+        rectangle "Legal\nExpert" as cond2
+        rectangle "Technical\nExpert" as cond3
+        cond_r --> cond1 : MEDICAL
+        cond_r --> cond2 : LEGAL
+        cond_r --> cond3 : TECHNICAL
     }
 }
 
@@ -58,21 +55,21 @@ package "Workflow Patterns (Deterministic)" {
 package "Agentic Patterns (LLM-Driven)" {
     
     package "5. Supervisor (Star)" #Thistle {
-        rectangle "Supervisor\n(LLM Planner)" as sup
-        rectangle "Withdraw\nAgent" as sup1
-        rectangle "Credit\nAgent" as sup2
-        rectangle "Exchange\nAgent" as sup3
+        rectangle "Bank\nSupervisor" as sup
+        rectangle "Withdraw\nTool" as sup1
+        rectangle "Credit\nTool" as sup2
+        rectangle "Exchange\nTool" as sup3
         sup --> sup1
         sup --> sup2
         sup --> sup3
     }
     
     package "6. Human-in-Loop (Gated)" #PeachPuff {
-        rectangle "Agent" as hil1
-        rectangle "Human\nApproval" as hil_h
-        rectangle "Continue" as hil2
-        hil1 --> hil_h : pause
-        hil_h --> hil2 : approve
+        rectangle "Zodiac\nExtractor" as hil1
+        rectangle "Human\nInput" as hil_h
+        rectangle "Horoscope\nAgent" as hil2
+        hil1 --> hil_h : need sign
+        hil_h --> hil2 : provide sign
     }
 }
 
@@ -84,7 +81,7 @@ package "Planning Patterns (Custom Planners)" {
         rectangle "Sign\nExtractor" as goap1
         rectangle "Horoscope\nGenerator" as goap2
         rectangle "Story\nFinder" as goap3
-        rectangle "Writer" as goap4
+        rectangle "Writer\nAgent" as goap4
         goap1 --> goap2
         goap1 --> goap3
         goap2 --> goap4
@@ -95,13 +92,14 @@ package "Planning Patterns (Custom Planners)" {
         rectangle "Literature\nAgent" as p2p1
         rectangle "Hypothesis\nAgent" as p2p2
         rectangle "Critic\nAgent" as p2p3
-        rectangle "Scorer\nAgent" as p2p4
-        p2p1 <--> p2p2
-        p2p2 <--> p2p3
-        p2p3 <--> p2p4
-        p2p4 <--> p2p1
-        p2p1 <--> p2p3
-        p2p2 <--> p2p4
+        rectangle "Validation\nAgent" as p2p4
+        rectangle "Scorer\nAgent" as p2p5
+        p2p1 --> p2p2
+        p2p2 --> p2p3
+        p2p3 --> p2p4
+        p2p4 --> p2p2 : reformulate
+        p2p4 --> p2p5 : validated
+        p2p5 --> p2p2 : score < 0.75
     }
 }
 

@@ -15,7 +15,7 @@ package "Azure Resource Group" {
     }
     
     component "Azure OpenAI" as openai {
-        component "gpt-4o-mini" as gpt
+        component "gpt-5-mini" as gpt
         component "text-embedding-3-small" as embed
     }
     
