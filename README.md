@@ -19,7 +19,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 - **8 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
-- **D3.js** animated topology graphs
+- **D3.js** animated topology graphs with agent tooltips (hover to see each agent's role)
 - **Dark-themed UI** with Tailwind CSS
 - **Azure OpenAI** integration via LangChain4j
 
