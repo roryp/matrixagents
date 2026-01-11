@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { PatternInfo, AgentEvent } from '../types'
+import { getAgentDescription } from '../data/agentDescriptions'
 
 interface WorkflowVisualizationProps {
   pattern: PatternInfo
@@ -25,6 +26,7 @@ interface Edge {
 
 export default function WorkflowVisualization({ pattern, events, isExecuting }: WorkflowVisualizationProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 })
 
   // Track active and completed agents from events
@@ -40,6 +42,40 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
       completedAgents.add(event.agentName)
     }
   })
+
+  // Create tooltip element
+  useEffect(() => {
+    if (!tooltipRef.current) {
+      const tooltip = document.createElement('div');
+      tooltip.className = 'agent-tooltip';
+      tooltip.style.cssText = `
+        position: fixed;
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.95);
+        border: 1px solid #00ff41;
+        border-radius: 8px;
+        color: #00ff41;
+        font-size: 13px;
+        max-width: 300px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        z-index: 1000;
+        box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.5;
+      `;
+      document.body.appendChild(tooltip);
+      tooltipRef.current = tooltip;
+    }
+    
+    return () => {
+      if (tooltipRef.current) {
+        document.body.removeChild(tooltipRef.current);
+        tooltipRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!svgRef.current) return
@@ -442,6 +478,33 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
       .attr('font-size', '11px')
       .attr('font-family', 'JetBrains Mono, monospace')
       .text(d => d.label)
+
+    // Add tooltip events to node groups
+    nodeGroups
+      .style('cursor', 'pointer')
+      .on('mouseenter', function(event: MouseEvent, d: Node) {
+        const tooltip = tooltipRef.current;
+        if (tooltip) {
+          const description = getAgentDescription(pattern.id, d.id);
+          tooltip.innerHTML = `<strong style="font-size: 14px; display: block; margin-bottom: 6px;">${d.label}</strong>${description}`;
+          tooltip.style.opacity = '1';
+          tooltip.style.left = `${event.clientX + 15}px`;
+          tooltip.style.top = `${event.clientY - 10}px`;
+        }
+      })
+      .on('mousemove', function(event: MouseEvent) {
+        const tooltip = tooltipRef.current;
+        if (tooltip) {
+          tooltip.style.left = `${event.clientX + 15}px`;
+          tooltip.style.top = `${event.clientY - 10}px`;
+        }
+      })
+      .on('mouseleave', function() {
+        const tooltip = tooltipRef.current;
+        if (tooltip) {
+          tooltip.style.opacity = '0';
+        }
+      });
 
   }, [pattern, events, dimensions, isExecuting])
 

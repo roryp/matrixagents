@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PatternInfo } from '../types'
 import { motion } from 'framer-motion'
+import { getAgentDescription } from '../data/agentDescriptions'
 import { 
   ArrowRight, 
   GitBranch, 
@@ -70,7 +71,8 @@ export default function PatternCard({ pattern, index }: PatternCardProps) {
             {pattern.agents.slice(0, 4).map((agent) => (
               <span 
                 key={agent}
-                className="text-xs px-2 py-1 rounded bg-matrix-accent/50 border border-matrix-primary/30"
+                title={getAgentDescription(pattern.id, agent)}
+                className="text-xs px-2 py-1 rounded bg-matrix-accent/50 border border-matrix-primary/30 cursor-help transition-all duration-200 hover:bg-matrix-primary/30 hover:border-matrix-primary"
               >
                 {agent}
               </span>
