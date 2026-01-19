@@ -544,6 +544,19 @@ Events are streamed via STOMP over SockJS:
 - **Animated D3 graphs** with agent highlighting
 - **Dark-themed** interface
 
+## Troubleshooting
+
+### WebSocket Proxy Error in Dev Mode
+
+When running the frontend with `npm run dev`, you may see this error in the Vite console:
+
+```
+[vite] ws proxy socket error:
+Error: write ECONNABORTED
+```
+
+**This is a cosmetic error** and does not affect functionality. It occurs because the underlying `http-proxy` library (used by Vite's dev server) doesn't properly clean up WebSocket streams when connections are interrupted during page navigation or hot module reload. The app will continue to work normally. This error does not appear in production builds.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
