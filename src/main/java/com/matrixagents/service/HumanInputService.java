@@ -1,11 +1,11 @@
 package com.matrixagents.service;
 
-import org.springframework.stereotype.Service;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 
-@Service
+@ApplicationScoped
 public class HumanInputService {
 
     private final Map<String, CompletableFuture<String>> pendingRequests = new ConcurrentHashMap<>();

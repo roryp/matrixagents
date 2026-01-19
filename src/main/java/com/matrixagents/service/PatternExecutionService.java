@@ -15,9 +15,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
 import jakarta.annotation.PreDestroy;
 
 import com.matrixagents.agents.ConditionalAgents.ExpertChatbot;
@@ -60,7 +59,7 @@ import dev.langchain4j.service.AiServices;
  * Uses the langchain4j-agentic module with proper AgenticServices.
  * Each pattern demonstrates a different workflow orchestration strategy.
  */
-@Service
+@ApplicationScoped
 public class PatternExecutionService {
 
     private static final Logger log = LoggerFactory.getLogger(PatternExecutionService.class);
@@ -72,8 +71,8 @@ public class PatternExecutionService {
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     public PatternExecutionService(
-            ChatModel chatModel,
-            @Qualifier("plannerModel") ChatModel plannerModel,
+            @Named("defaultChatModel") ChatModel chatModel,
+            @Named("plannerModel") ChatModel plannerModel,
             EventPublisher eventPublisher,
             HumanInputService humanInputService) {
         this.chatModel = chatModel;

@@ -360,11 +360,10 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ### Backend
 - **Java 21** with Virtual Threads
-- **Spring Boot 4.0.1**
+- **Quarkus 3.30.6**
 - **LangChain4j 1.10.0** (Core)
 - **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
 - **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
-- **Spring Dotenv** for `.env` file support
 - **WebSocket** (STOMP over SockJS)
 
 ### Frontend
@@ -396,7 +395,7 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 
 2. Run the backend:
 ```bash
-mvn spring-boot:run
+mvn quarkus:run
 ```
 
 The backend will start on `http://localhost:8080`
@@ -470,7 +469,6 @@ azd down
 ```
 matrixagents/
 ├── src/main/java/com/matrixagents/
-│   ├── MatrixAgentsApplication.java    # Spring Boot entry
 │   ├── agents/                         # Agent interfaces
 │   │   ├── SequenceAgents.java
 │   │   ├── ParallelAgents.java
@@ -553,5 +551,5 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [LangChain4j](https://docs.langchain4j.dev/) - Java LLM framework
-- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework
+- [Quarkus](https://quarkus.io/) - Application framework
 - [D3.js](https://d3js.org/) - Data visualization
