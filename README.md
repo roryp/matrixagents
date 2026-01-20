@@ -395,7 +395,7 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 
 2. Run the backend:
 ```bash
-mvn quarkus:run
+mvn quarkus:dev
 ```
 
 The backend will start on `http://localhost:8080`
@@ -479,8 +479,7 @@ matrixagents/
 │   │   ├── GOAPAgents.java
 │   │   └── P2PAgents.java
 │   ├── config/
-│   │   ├── LangChainConfig.java        # LLM configuration
-│   │   └── WebSocketConfig.java        # WebSocket setup
+│   │   └── LangChainConfig.java        # LLM configuration
 │   ├── controller/
 │   │   └── PatternController.java      # REST endpoints
 │   └── service/
@@ -523,10 +522,9 @@ OpenAiOfficialChatModel.builder()
 
 ### WebSocket
 
-Events are streamed via STOMP over SockJS:
+Events are streamed via native Quarkus WebSockets:
 - **Endpoint**: `/ws`
-- **Subscribe (global)**: `/topic/events`
-- **Subscribe (pattern)**: `/topic/patterns/{patternId}`
+- **Messages**: JSON events with `type`, `agentName`, `message`, and `patternId`
 
 ## API Endpoints
 
