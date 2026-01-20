@@ -17,18 +17,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [currentSubscription, setCurrentSubscription] = useState<string | null>(null)
   const socketRef = useRef<WebSocket | null>(null)
 
-  // Handler for incoming events - deduplicate by eventId
-  const handleEvent = useCallback((message: { body: string }) => {
-    const event = JSON.parse(message.body) as AgentEvent
-    setEvents(prev => {
-      // Deduplicate: check if event with same eventId already exists
-      if (event.eventId && prev.some(e => e.eventId === event.eventId)) {
-        return prev
-      }
-      return [...prev, event]
-    })
-  }, [])
-
   useEffect(() => {
     // Dynamically determine WebSocket URL based on current location
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'

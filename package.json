@@ -1,0 +1,27 @@
+{
+  "name": "matrixagents",
+  "version": "1.0.0",
+  "description": "A showcase application demonstrating **8 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roryp/matrixagents.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/roryp/matrixagents/issues"
+  },
+  "homepage": "https://github.com/roryp/matrixagents#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
