@@ -61,3 +61,4 @@ temp/
 request.json
 .azure
 next-steps.md
+node_modules/

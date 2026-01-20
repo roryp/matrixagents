@@ -103,7 +103,7 @@ public record PatternInfo(
                 Map.of("from", "ProposalAgent", "to", "Human"),
                 Map.of("from", "Human", "to", "ExecutionAgent")
             )),
-            "Create a proposal for reorganizing the team structure"
+            "Create a horoscope for me"
         );
     }
 
