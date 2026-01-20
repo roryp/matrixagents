@@ -4,6 +4,13 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
+## Branches
+
+| Branch | Framework | Description |
+|--------|-----------|-------------|
+| **main** | Spring Boot 4.0 | Production-ready with Spring WebSocket (STOMP/SockJS) |
+| **quarkus** | Quarkus 3.30 | Alternative implementation with native Quarkus WebSockets |
+
 ## Table of Contents
 
 - [Features](#features)
