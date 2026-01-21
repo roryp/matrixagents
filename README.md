@@ -4,6 +4,15 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
+> **🔀 Choose Your Framework:**
+> 
+> This project supports two backend frameworks. **You are currently viewing the Quarkus branch.**
+> 
+> | Branch | Framework | Command |
+> |--------|-----------|----------|
+> | `quarkus` | **Quarkus** ✅ *(current)* | `git checkout quarkus` |
+> | `main` | **Spring Boot** | `git checkout main` |
+
 ## Table of Contents
 
 - [Features](#features)
@@ -360,11 +369,11 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ### Backend
 - **Java 21** with Virtual Threads
-- **Quarkus 3.30.6**
+- **Quarkus 3.30.6** *(this branch)* — or **Spring Boot 3.4** on the `main` branch
 - **LangChain4j 1.10.0** (Core)
 - **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
 - **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
-- **WebSocket** (STOMP over SockJS)
+- **Native Quarkus WebSockets** *(this branch)* — or STOMP over SockJS on `main` branch
 
 ### Frontend
 - **React 18** with TypeScript
@@ -374,6 +383,22 @@ String hypothesis = scope.readState("hypothesis", "");
 - **React Router** for navigation
 
 ## Getting Started
+
+### Clone and Choose Your Branch
+
+```bash
+# Clone the repository
+git clone https://github.com/roryp/matrixagents.git
+cd matrixagents
+
+# Choose your backend framework:
+
+# Option A: Quarkus (this branch)
+git checkout quarkus
+
+# Option B: Spring Boot (main branch)
+git checkout main
+```
 
 ### Prerequisites
 - Java 21+
@@ -394,8 +419,15 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 > **Note:** The `.env` file is excluded from git via `.gitignore` to keep your credentials secure.
 
 2. Run the backend:
+
+**For Quarkus** *(this branch)*:
 ```bash
 mvn quarkus:dev
+```
+
+**For Spring Boot** *(switch to `main` branch first)*:
+```bash
+mvn spring-boot:run
 ```
 
 The backend will start on `http://localhost:8080`
@@ -522,7 +554,7 @@ OpenAiOfficialChatModel.builder()
 
 ### WebSocket
 
-Events are streamed via native Quarkus WebSockets:
+Events are streamed via **native Quarkus WebSockets** *(this branch)* — or STOMP over SockJS on the `main` branch:
 - **Endpoint**: `/ws`
 - **Messages**: JSON events with `type`, `agentName`, `message`, and `patternId`
 
@@ -562,5 +594,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [LangChain4j](https://docs.langchain4j.dev/) - Java LLM framework
-- [Quarkus](https://quarkus.io/) - Application framework
+- [Quarkus](https://quarkus.io/) - Application framework *(this branch)*
+- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework (`main` branch)
 - [D3.js](https://d3js.org/) - Data visualization
