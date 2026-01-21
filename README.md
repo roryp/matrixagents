@@ -4,12 +4,14 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
-## Branches
-
-| Branch | Framework | Description |
-|--------|-----------|-------------|
-| **main** | Spring Boot 4.0 | Production-ready with Spring WebSocket (STOMP/SockJS) |
-| **quarkus** | Quarkus 3.30 | Alternative implementation with native Quarkus WebSockets |
+> **🔀 Choose Your Framework:**
+> 
+> This project supports two backend frameworks. Choose the branch that matches your preference:
+> 
+> | Branch | Framework | Command |
+> |--------|-----------|----------||
+> | `main` | **Spring Boot 4.0** | `git checkout main` |
+> | `quarkus` | **Quarkus 3.30** | `git checkout quarkus` |
 
 ## Table of Contents
 
@@ -367,7 +369,7 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ### Backend
 - **Java 21** with Virtual Threads
-- **Spring Boot 4.0.1**
+- **Spring Boot 4.0.1** (`main` branch) / **Quarkus 3.30** (`quarkus` branch)
 - **LangChain4j 1.10.0** (Core)
 - **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
 - **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
@@ -382,6 +384,22 @@ String hypothesis = scope.readState("hypothesis", "");
 - **React Router** for navigation
 
 ## Getting Started
+
+### Clone and Choose Your Branch
+
+```bash
+# Clone the repository
+git clone https://github.com/roryp/matrixagents.git
+cd matrixagents
+
+# Choose your backend framework:
+
+# Option A: Spring Boot (main branch - default)
+git checkout main
+
+# Option B: Quarkus (quarkus branch)
+git checkout quarkus
+```
 
 ### Prerequisites
 - Java 21+
@@ -402,8 +420,15 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 > **Note:** The `.env` file is excluded from git via `.gitignore` to keep your credentials secure.
 
 2. Run the backend:
+
+**For Spring Boot** (`main` branch):
 ```bash
 mvn spring-boot:run
+```
+
+**For Quarkus** (`quarkus` branch):
+```bash
+mvn quarkus:dev
 ```
 
 The backend will start on `http://localhost:8080`
@@ -532,10 +557,10 @@ OpenAiOfficialChatModel.builder()
 
 ### WebSocket
 
-Events are streamed via STOMP over SockJS:
+Events are streamed via WebSockets (STOMP over SockJS on `main` branch, native Quarkus WebSockets on `quarkus` branch):
 - **Endpoint**: `/ws`
-- **Subscribe (global)**: `/topic/events`
-- **Subscribe (pattern)**: `/topic/patterns/{patternId}`
+- **Subscribe (global)**: `/topic/events` (Spring Boot only)
+- **Subscribe (pattern)**: `/topic/patterns/{patternId}` (Spring Boot only)
 
 ## API Endpoints
 
@@ -560,5 +585,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [LangChain4j](https://docs.langchain4j.dev/) - Java LLM framework
-- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework
+- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework (`main` branch)
+- [Quarkus](https://quarkus.io/) - Application framework (`quarkus` branch)
 - [D3.js](https://d3js.org/) - Data visualization
