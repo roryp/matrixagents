@@ -4,14 +4,13 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
-> **🔀 Choose Your Framework:**
-> 
-> This project supports two backend frameworks. Choose the branch that matches your preference:
-> 
-> | Branch | Framework | Command |
-> |--------|-----------|----------||
-> | `main` | **Spring Boot 4.0** | `git checkout main` |
-> | `quarkus` | **Quarkus 3.30** | `git checkout quarkus` |
+> [!TIP]
+> **🔀 Choose Your Framework:** This project supports two backend frameworks. **You are currently viewing the Spring Boot branch.**
+
+| Branch | Framework | Command |
+|--------|-----------|----------|
+| `main` | **Spring Boot** ✅ *(current)* | `git checkout main` |
+| `quarkus` | **Quarkus** | `git checkout quarkus` |
 
 ## Table of Contents
 
@@ -369,12 +368,11 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ### Backend
 - **Java 21** with Virtual Threads
-- **Spring Boot 4.0.1** (`main` branch) / **Quarkus 3.30** (`quarkus` branch)
+- **Spring Boot 4.0** *(this branch)* — or **Quarkus 3.30.6** on the `quarkus` branch
 - **LangChain4j 1.10.0** (Core)
 - **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
 - **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
-- **Spring Dotenv** for `.env` file support
-- **WebSocket** (STOMP over SockJS)
+- **STOMP over SockJS** *(this branch)* — or Native Quarkus WebSockets on `quarkus` branch
 
 ### Frontend
 - **React 18** with TypeScript
@@ -394,10 +392,10 @@ cd matrixagents
 
 # Choose your backend framework:
 
-# Option A: Spring Boot (main branch - default)
+# Option A: Spring Boot (this branch)
 git checkout main
 
-# Option B: Quarkus (quarkus branch)
+# Option B: Quarkus
 git checkout quarkus
 ```
 
@@ -421,12 +419,12 @@ AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 
 2. Run the backend:
 
-**For Spring Boot** (`main` branch):
+**For Spring Boot** *(this branch)*:
 ```bash
 mvn spring-boot:run
 ```
 
-**For Quarkus** (`quarkus` branch):
+**For Quarkus** *(switch to `quarkus` branch first)*:
 ```bash
 mvn quarkus:dev
 ```
@@ -502,7 +500,6 @@ azd down
 ```
 matrixagents/
 ├── src/main/java/com/matrixagents/
-│   ├── MatrixAgentsApplication.java    # Spring Boot entry
 │   ├── agents/                         # Agent interfaces
 │   │   ├── SequenceAgents.java
 │   │   ├── ParallelAgents.java
@@ -513,12 +510,17 @@ matrixagents/
 │   │   ├── GOAPAgents.java
 │   │   └── P2PAgents.java
 │   ├── config/
+│   │   ├── CorsConfig.java             # CORS configuration
 │   │   ├── LangChainConfig.java        # LLM configuration
-│   │   └── WebSocketConfig.java        # WebSocket setup
+│   │   └── WebSocketConfig.java        # STOMP/SockJS WebSocket setup
 │   ├── controller/
-│   │   └── PatternController.java      # REST endpoints
+│   │   ├── PatternController.java      # REST endpoints
+│   │   └── WebSocketController.java    # WebSocket messaging
 │   └── service/
-│       └── PatternExecutionService.java # Pattern orchestration
+│       ├── EventPublisher.java         # WebSocket event publishing
+│       ├── HumanInputService.java      # Human-in-the-loop input handling
+│       ├── PatternExecutionService.java # Pattern orchestration
+│       └── WebSocketAgentListener.java # AgentListener → WebSocket bridge
 ├── frontend/
 │   ├── src/
 │   │   ├── components/                 # React components
@@ -557,18 +559,21 @@ OpenAiOfficialChatModel.builder()
 
 ### WebSocket
 
-Events are streamed via WebSockets (STOMP over SockJS on `main` branch, native Quarkus WebSockets on `quarkus` branch):
+Events are streamed via **STOMP over SockJS** *(this branch)* — or native Quarkus WebSockets on the `quarkus` branch:
 - **Endpoint**: `/ws`
-- **Subscribe (global)**: `/topic/events` (Spring Boot only)
-- **Subscribe (pattern)**: `/topic/patterns/{patternId}` (Spring Boot only)
+- **Messages**: JSON events with `type`, `agentName`, `message`, and `patternId`
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/patterns` | List all patterns |
-| GET | `/api/patterns/{id}` | Get pattern details |
-| POST | `/api/patterns/{id}/execute` | Execute a pattern |
+| GET | `/api/patterns/{patternId}` | Get pattern details |
+| POST | `/api/patterns/{patternId}/execute` | Execute a pattern |
+| POST | `/api/human-input/{requestId}` | Provide human-in-the-loop input |
+| GET | `/api/human-input/pending` | Get pending human input requests |
+| GET | `/api/health` | Health check |
+| WS | `/ws` | STOMP over SockJS WebSocket endpoint |
 
 ## UI Features
 
@@ -578,6 +583,19 @@ Events are streamed via WebSockets (STOMP over SockJS on `main` branch, native Q
 - **Animated D3 graphs** with agent highlighting
 - **Dark-themed** interface
 
+## Troubleshooting
+
+### WebSocket Proxy Error in Dev Mode
+
+When running the frontend with `npm run dev`, you may see this error in the Vite console:
+
+```
+[vite] ws proxy socket error:
+Error: write ECONNABORTED
+```
+
+**This is a cosmetic error** and does not affect functionality. It occurs because the underlying `http-proxy` library (used by Vite's dev server) doesn't properly clean up WebSocket streams when connections are interrupted during page navigation or hot module reload. The app will continue to work normally. This error does not appear in production builds.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
@@ -585,6 +603,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 ## Acknowledgments
 
 - [LangChain4j](https://docs.langchain4j.dev/) - Java LLM framework
-- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework (`main` branch)
+- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework *(this branch)*
 - [Quarkus](https://quarkus.io/) - Application framework (`quarkus` branch)
 - [D3.js](https://d3js.org/) - Data visualization

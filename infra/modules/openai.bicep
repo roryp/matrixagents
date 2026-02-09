@@ -38,7 +38,7 @@ resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   name: modelDeploymentName
   sku: {
     name: 'GlobalStandard'
-    capacity: 100
+    capacity: 30
   }
   properties: {
     model: {
@@ -55,7 +55,7 @@ resource embeddingModelDeployment 'Microsoft.CognitiveServices/accounts/deployme
   name: embeddingDeploymentName
   sku: {
     name: 'Standard'
-    capacity: 120
+    capacity: 30
   }
   properties: {
     model: {
