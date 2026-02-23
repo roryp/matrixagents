@@ -34,7 +34,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Patterns Demonstrated
 
-![Agentic Patterns Overview](docs/patterns.png)
+<img src="docs/patterns-overview.png" alt="All 8 Agentic Patterns Overview — Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, and P2P" width="800"/>
 
 ### Workflow Patterns (Deterministic Orchestration)
 | Pattern | Description | Topology |
@@ -90,7 +90,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 **Example prompt:** *"Write a fantasy story for teenagers in a humorous style"*
 - CreativeWriter → AudienceEditor → StyleEditor
 
-![Sequential Pattern](docs/sequential.png)
+<img src="docs/pattern-sequential.png" alt="Sequential Workflow Pattern — agents chained left-to-right: CreativeWriter generates a draft, AudienceEditor adapts for the target audience, StyleEditor polishes the final output. Data flows through AgenticScope shared state." width="800"/>
 
 ---
 
@@ -107,7 +107,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 **Example prompt:** *"Evaluate this startup idea: AI-powered pet translator"*
 
-![Parallel Pattern](docs/parallel.png)
+<img src="docs/pattern-parallel.png" alt="Parallel Workflow Pattern — fan-out/fan-in topology: input fans out to FoodExpert and MovieExpert running simultaneously, then results converge at a Combiner node. Agents execute concurrently for faster results." width="800"/>
 
 ---
 
@@ -125,7 +125,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 **Example prompt:** *"Write a haiku about coding"* (iterates until the critic gives 8+/10)
 
-![Loop Pattern](docs/loop.png)
+<img src="docs/pattern-loop.png" alt="Loop Workflow Pattern — iterative refinement cycle: CreativeWriter generates content, StyleScorer evaluates quality (0.0–1.0), StyleEditor refines based on feedback. Cycle repeats until score >= 0.8 or maxIterations(5) is reached." width="800"/>
 
 ---
 
@@ -142,7 +142,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 **Example prompt:** *"I have chest pain"* → routes to medical expert
 
-![Conditional Pattern](docs/conditional.png)
+<img src="docs/pattern-conditional.png" alt="Conditional Routing Pattern — CategoryRouter classifies input and branches to specialist agents: MedicalExpert, LegalExpert, or TechnicalExpert. Each branch handles domain-specific queries independently." width="800"/>
 
 ---
 
@@ -165,7 +165,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 **Example prompt:** *"Transfer 100 USD from Mario to Georgios, then convert 50 USD to EUR"*
 - BankSupervisor delegates to: WithdrawAgent, CreditAgent, ExchangeAgent
 
-![Supervisor Pattern](docs/supervisor.png)
+<img src="docs/pattern-supervisor.png" alt="Supervisor Pattern — LLM-driven star topology: BankSupervisor agent uses AI to plan and decompose complex requests, then delegates subtasks to WithdrawAgent, CreditAgent, and ExchangeAgent. The supervisor dynamically orchestrates based on the input." width="800"/>
 
 ---
 
@@ -184,7 +184,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 - Asks human: "What is your zodiac sign?"
 - Uses human's answer to generate personalized horoscope
 
-![Human-in-the-Loop Pattern](docs/humaninloop.png)
+<img src="docs/pattern-humaninloop.png" alt="Human-in-the-Loop Pattern — zodiac horoscope gated workflow: ZodiacExtractor attempts to extract zodiac sign from input, if UNKNOWN the flow pauses for human input (via WebSocket HUMAN_INPUT_REQUESTED event), human provides their zodiac sign via UI modal, then HoroscopeAgent generates a personalized horoscope." width="800"/>
 
 ---
 
@@ -206,7 +206,7 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 **Example prompt:** *"Generate a personalized horoscope for someone born on March 15th"*
 - GOAP calculates the dependency graph and executes: SignExtractor → (HoroscopeGenerator + StoryFinder in parallel) → WriterAgent
 
-![GOAP Pattern](docs/goap.png)
+<img src="docs/pattern-goap.png" alt="GOAP Pattern — Goal-Oriented Action Planning with DAG topology: the planner calculates the optimal execution path like GPS navigation. SignExtractor feeds both HoroscopeGenerator and StoryFinder (parallel), which converge at WriterAgent to produce the final writeup. Preconditions and effects drive the dependency graph." width="800"/>
 
 ---
 
@@ -226,7 +226,7 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 **Example prompt:** *"Generate and evaluate startup ideas for AI in healthcare"*
 
-![P2P Pattern](docs/p2p.png)
+<img src="docs/pattern-p2p.png" alt="P2P Pattern — Peer-to-Peer decentralized mesh topology: LiteratureAgent, HypothesisAgent, CriticAgent, ValidationAgent, and ScorerAgent collaborate as equals without a central controller. Agents react to each other's outputs, iterating until the ScorerAgent's quality threshold (0.75) is met. Emergent collaboration produces refined research hypotheses." width="800"/>
 
 ---
 
