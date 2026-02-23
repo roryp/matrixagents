@@ -62,3 +62,4 @@ request.json
 .azure
 next-steps.md
 node_modules/
+IMAGE_GENERATION_GUIDE.md
