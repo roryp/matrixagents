@@ -390,23 +390,32 @@ public class PatternExecutionService {
             events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "request", truncate(prompt))));
             events.add(publishEvent(AgentEvent.stateUpdated("supervisor", "balances", bankTool.getAllBalances().toString())));
 
-            // Build sub-agents using AgenticServices.agentBuilder() with tools
+            // Create listener to publish sub-agent events via WebSocket
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "supervisor", events);
+
+            // Build sub-agents using AgenticServices.agentBuilder() with tools and listener
+            // Listener is attached to each sub-agent so we get events when the supervisor invokes them
             WithdrawAgent withdrawAgent = AgenticServices.agentBuilder(WithdrawAgent.class)
                     .chatModel(chatModel)
                     .tools(bankTool)
+                    .listener(listener)
                     .build();
 
             CreditAgent creditAgent = AgenticServices.agentBuilder(CreditAgent.class)
                     .chatModel(chatModel)
                     .tools(bankTool)
+                    .listener(listener)
                     .build();
 
             ExchangeAgent exchangeAgent = AgenticServices.agentBuilder(ExchangeAgent.class)
                     .chatModel(chatModel)
                     .tools(exchangeTool)
+                    .listener(listener)
                     .build();
 
             // Build supervisor using AgenticServices.supervisorBuilder() with sub-agents
+            // Note: supervisorBuilder() doesn't expose listener() on its interface,
+            // so we attach listeners to each sub-agent instead
             SupervisorAgent supervisor = AgenticServices.supervisorBuilder()
                     .chatModel(plannerModel)
                     .subAgents(withdrawAgent, creditAgent, exchangeAgent)
