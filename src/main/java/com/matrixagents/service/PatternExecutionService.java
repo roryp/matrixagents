@@ -662,11 +662,20 @@ public class PatternExecutionService {
             
             // Capture the final scope state
             scope.putAll(listener.getScopeSnapshot());
+            scope.put("hypothesis", hypothesis);
             
             // Get final score from scope
             Double finalScore = result.agenticScope().readState("score", 0.0);
             scope.put("finalScore", finalScore);
+
+            // Log planner completion with score summary
+            boolean targetReached = finalScore >= targetScore;
+            events.add(publishEvent(AgentEvent.agentCompleted("p2p", "p2pPlanner",
+                    String.format("Peer collaboration complete. Score: %.2f (target: %.2f)", finalScore, targetScore))));
+            events.add(publishEvent(AgentEvent.stateUpdated("p2p", "hypothesis", truncate(hypothesis))));
             events.add(publishEvent(AgentEvent.stateUpdated("p2p", "finalScore", String.format("%.2f", finalScore))));
+            events.add(publishEvent(AgentEvent.stateUpdated("p2p", "exitCondition",
+                    targetReached ? "Target score " + targetScore + " reached" : "Max iterations reached")));
 
             // Format final output
             String finalOutput = String.format("""
