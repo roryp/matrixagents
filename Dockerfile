@@ -33,6 +33,12 @@ RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -D appuser
 # Copy the built JAR
 COPY --from=backend-build /app/target/*.jar app.jar
 
+# Download Application Insights Java agent for Azure Monitor telemetry
+ADD https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.6.2/applicationinsights-agent-3.6.2.jar applicationinsights-agent.jar
+
+# Copy Application Insights configuration
+COPY applicationinsights.json ./applicationinsights.json
+
 # Set ownership
 RUN chown -R appuser:appgroup /app
 
@@ -46,5 +52,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# Run the application with optimized JVM settings
-ENTRYPOINT ["java", "-XX:+UseG1GC", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+# Run the application with Application Insights agent and optimized JVM settings
+ENTRYPOINT ["java", "-javaagent:/app/applicationinsights-agent.jar", "-XX:+UseG1GC", "-XX:MaxRAMPercentage=75.0", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
