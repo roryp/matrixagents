@@ -8,7 +8,7 @@ title LangChain4j Agentic Patterns
 
 ' ==== WORKFLOW PATTERNS ====
 
-package "Workflow Patterns (Deterministic)" {
+package "Workflow Patterns" {
     
     package "1. Sequential (Chain)" #LightBlue {
         rectangle "Creative\nWriter" as seq1
@@ -52,7 +52,7 @@ package "Workflow Patterns (Deterministic)" {
 
 ' ==== AGENTIC PATTERNS ====
 
-package "Agentic Patterns (LLM-Driven)" {
+package "Agentic Patterns" {
     
     package "5. Supervisor (Star)" #Thistle {
         rectangle "Bank\nSupervisor" as sup

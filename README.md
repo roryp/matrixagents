@@ -36,7 +36,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 <img src="docs/patterns-overview.png" alt="All 8 Agentic Patterns Overview — Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, and P2P" width="800"/>
 
-### Workflow Patterns (Deterministic Orchestration)
+### Workflow Patterns
 | Pattern | Description | Topology |
 |---------|-------------|----------|
 | **Sequential** | Agents invoked one after another in order | Chain |
@@ -44,7 +44,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 | **Loop** | Iterative refinement until exit condition | Cycle |
 | **Conditional** | Routes to different agents based on conditions | Branch |
 
-### Agentic Patterns (LLM-Driven Orchestration)
+### Agentic Patterns
 | Pattern | Description | Topology |
 |---------|-------------|----------|
 | **Supervisor** | LLM plans and orchestrates sub-agents | Star |
@@ -74,7 +74,7 @@ Think of agents like specialized workers in a factory - each has a specific job,
 
 ### Workflow Patterns
 
-These patterns follow **deterministic rules** - you define exactly how agents interact.
+These patterns follow **structured rules** - you define exactly how agents interact.
 
 #### 1. Sequential Workflow (Chain)
 
@@ -165,7 +165,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 **Example prompt:** *"Transfer 100 USD from Mario to Georgios, then convert 50 USD to EUR"*
 - BankSupervisor delegates to: WithdrawAgent, CreditAgent, ExchangeAgent
 
-<img src="docs/pattern-supervisor.png" alt="Supervisor Pattern — LLM-driven star topology: BankSupervisor agent uses AI to plan and decompose complex requests, then delegates subtasks to WithdrawAgent, CreditAgent, and ExchangeAgent. The supervisor dynamically orchestrates based on the input." width="800"/>
+<img src="docs/pattern-supervisor.png" alt="Supervisor Pattern — star topology: BankSupervisor agent plans and decomposes complex requests, then delegates subtasks to WithdrawAgent, CreditAgent, and ExchangeAgent. The supervisor dynamically orchestrates based on the input." width="800"/>
 
 ---
 
@@ -654,8 +654,8 @@ The `.env` file keeps your Azure OpenAI credentials out of source control. It's 
 <details>
 <summary><strong>What's the difference between "Workflow" and "Agentic" patterns?</strong></summary>
 
-- **Workflow patterns** (Sequential, Parallel, Loop, Conditional) are **deterministic** — you define exactly how agents interact in code.
-- **Agentic patterns** (Supervisor, Human-in-the-Loop) are **LLM-driven** — the LLM decides how to orchestrate agents at runtime.
+- **Workflow patterns** (Sequential, Parallel, Loop, Conditional) — you define exactly how agents interact in code.
+- **Agentic patterns** (Supervisor, Human-in-the-Loop) — the LLM decides how to orchestrate agents at runtime.
 - **Planning patterns** (GOAP, P2P) use **specialized algorithms** to determine the optimal agent execution plan.
 </details>
 

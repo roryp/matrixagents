@@ -115,7 +115,7 @@ add_image_centered(slide, os.path.join(DOCS, "patterns-overview.png"), Inches(1.
 patterns = [
     {
         "title": "1. Sequential Workflow",
-        "subtitle": "Chain — Deterministic Orchestration",
+        "subtitle": "Chain Orchestration",
         "image": "pattern-sequential.png",
         "bullets": [
             "Agents run one after another, like an assembly line",
@@ -126,7 +126,7 @@ patterns = [
     },
     {
         "title": "2. Parallel Workflow",
-        "subtitle": "Fan-out — Deterministic Orchestration",
+        "subtitle": "Fan-out Orchestration",
         "image": "pattern-parallel.png",
         "bullets": [
             "Multiple agents run simultaneously, results combined",
@@ -137,7 +137,7 @@ patterns = [
     },
     {
         "title": "3. Loop Workflow",
-        "subtitle": "Cycle — Deterministic Orchestration",
+        "subtitle": "Cycle Orchestration",
         "image": "pattern-loop.png",
         "bullets": [
             "Iterative refinement until quality threshold is met",
@@ -148,7 +148,7 @@ patterns = [
     },
     {
         "title": "4. Conditional Routing",
-        "subtitle": "Branch — Deterministic Orchestration",
+        "subtitle": "Branch Orchestration",
         "image": "pattern-conditional.png",
         "bullets": [
             "Routes to different specialist agents based on input",
@@ -159,7 +159,7 @@ patterns = [
     },
     {
         "title": "5. Supervisor Agent",
-        "subtitle": "Star — LLM-Driven Orchestration",
+        "subtitle": "Star Orchestration",
         "image": "pattern-supervisor.png",
         "bullets": [
             "A 'boss' agent plans and delegates to worker agents",
@@ -170,7 +170,7 @@ patterns = [
     },
     {
         "title": "6. Human-in-the-Loop",
-        "subtitle": "Gated — LLM-Driven Orchestration",
+        "subtitle": "Gated Orchestration",
         "image": "pattern-humaninloop.png",
         "bullets": [
             "Pauses execution for human input or approval",

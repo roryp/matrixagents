@@ -56,7 +56,7 @@ export default function Dashboard({ patterns }: DashboardProps) {
           <div>
             <h2 className="text-2xl font-bold">Workflow Patterns</h2>
             <p className="text-matrix-secondary text-sm">
-              Deterministic, structured agent orchestration
+              Structured agent orchestration
             </p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export default function Dashboard({ patterns }: DashboardProps) {
           <div>
             <h2 className="text-2xl font-bold">Agentic Patterns</h2>
             <p className="text-matrix-secondary text-sm">
-              LLM-driven autonomous orchestration
+              Autonomous agent orchestration
             </p>
           </div>
         </div>
