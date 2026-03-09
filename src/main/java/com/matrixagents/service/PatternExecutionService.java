@@ -19,7 +19,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.annotation.PreDestroy;
 
-import com.matrixagents.agents.ConditionalAgents.ExpertChatbot;
+import com.matrixagents.agents.ConditionalAgents;
 import com.matrixagents.agents.GOAPAgents.HoroscopeGenerator;
 import com.matrixagents.agents.GOAPAgents.SignExtractor;
 import com.matrixagents.agents.GOAPAgents.StoryFinder;
@@ -216,9 +216,18 @@ public class PatternExecutionService {
             events.add(publishEvent(AgentEvent.agentInvoked("parallel", "movieExpert", "Recommending movies for " + mood + " mood...")));
 
             List<EveningPlan> plans = planner.plan(mood);
-            
-            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "foodExpert", "Completed meal suggestions")));
-            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "movieExpert", "Completed movie recommendations")));
+
+            // Log actual results from each expert
+            StringBuilder meals = new StringBuilder();
+            StringBuilder movies = new StringBuilder();
+            for (int i = 0; i < plans.size(); i++) {
+                EveningPlan plan = plans.get(i);
+                if (i > 0) { meals.append(", "); movies.append(", "); }
+                meals.append(plan.meal());
+                movies.append(plan.movie());
+            }
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "foodExpert", "Meals: " + meals)));
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel", "movieExpert", "Movies: " + movies)));
 
             // Format results
             StringBuilder result = new StringBuilder("## Evening Plans for " + mood + " mood:\n\n");
@@ -329,8 +338,8 @@ public class PatternExecutionService {
 
     /**
      * CONDITIONAL PATTERN: Router -> Expert activation based on category
-     * Uses fully declarative approach with @SequenceAgent composing @Agent (CategoryRouter) 
-     * and @ConditionalAgent (ExpertRouterAgent) with @ActivationCondition methods.
+     * Uses @Agent (CategoryRouter) for classification, then routes to the appropriate
+     * @Agent expert (Medical, Legal, Technical) based on the classified category.
      */
     private ExecutionResult executeConditional(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -339,25 +348,56 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → ExpertRouterAgent (fully declarative)")));
+            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → Expert activation based on classification")));
 
             scope.put("request", prompt);
             events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
 
-            // Build the full declarative expert chatbot using createAgenticSystem
-            // ExpertChatbot is defined with @SequenceAgent combining CategoryRouter and ExpertRouterAgent
-            // CategoryRouter has @Agent outputKey="category", ExpertRouterAgent has @ConditionalAgent with @ActivationCondition
-            ExpertChatbot expertChatbot = AgenticServices.createAgenticSystem(ExpertChatbot.class, chatModel);
+            // Step 1: Classify the request using CategoryRouter
+            ConditionalAgents.CategoryRouter router = AgenticServices.agentBuilder(ConditionalAgents.CategoryRouter.class)
+                    .chatModel(chatModel)
+                    .outputKey("category")
+                    .build();
 
             events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
-            events.add(publishEvent(AgentEvent.agentInvoked("conditional", "expertRouter", "Routing to appropriate expert...")));
+            ConditionalAgents.RequestCategory category = router.classify(prompt);
+            events.add(publishEvent(AgentEvent.agentCompleted("conditional", "categoryRouter", "Classified as: " + category)));
 
-            // Execute the full sequence
-            String response = expertChatbot.ask(prompt);
+            scope.put("category", category.toString());
+            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category.toString())));
+
+            // Step 2: Route to the appropriate expert based on classification
+            String expertName = switch (category) {
+                case MEDICAL -> "medicalExpert";
+                case LEGAL -> "legalExpert";
+                case TECHNICAL -> "technicalExpert";
+                case UNKNOWN -> "unknown";
+            };
+
+            events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Activated " + category + " expert for request")));
+
+            String response = switch (category) {
+                case MEDICAL -> {
+                    ConditionalAgents.MedicalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.MedicalExpert.class)
+                            .chatModel(chatModel).outputKey("response").build();
+                    yield expert.medical(prompt);
+                }
+                case LEGAL -> {
+                    ConditionalAgents.LegalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.LegalExpert.class)
+                            .chatModel(chatModel).outputKey("response").build();
+                    yield expert.legal(prompt);
+                }
+                case TECHNICAL -> {
+                    ConditionalAgents.TechnicalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.TechnicalExpert.class)
+                            .chatModel(chatModel).outputKey("response").build();
+                    yield expert.technical(prompt);
+                }
+                case UNKNOWN -> "I'm sorry, I can only assist with medical, legal, or technical questions. Please rephrase your request.";
+            };
+
+            events.add(publishEvent(AgentEvent.agentCompleted("conditional", expertName, truncate(response))));
 
             scope.put("response", response);
-            events.add(publishEvent(AgentEvent.agentCompleted("conditional", "expertChatbot", truncate(response))));
-
             events.add(publishEvent(AgentEvent.completed("conditional", response)));
             return ExecutionResult.success(executionId, "conditional", response, events, scope, startTime);
 
