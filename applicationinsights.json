@@ -1,0 +1,21 @@
+{
+  "connectionString": "${APPLICATIONINSIGHTS_CONNECTION_STRING}",
+  "role": {
+    "name": "matrix-agents-showcase"
+  },
+  "instrumentation": {
+    "http": {
+      "captureHeaders": {
+        "request": ["x-ms-client-request-id", "api-key-present"],
+        "response": ["x-ms-request-id", "x-ratelimit-remaining-requests"]
+      }
+    }
+  },
+  "preview": {
+    "captureHttpServer4xxAsError": false
+  },
+  "selfDiagnostics": {
+    "destination": "console",
+    "level": "WARN"
+  }
+}
