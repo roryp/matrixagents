@@ -237,16 +237,22 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 ### Choosing the Right Pattern
 
-| Situation | Recommended Pattern |
-|-----------|---------------------|
-| Simple pipeline with clear steps | Sequential |
-| Need multiple perspectives fast | Parallel |
-| Quality is critical, time isn't | Loop |
-| Different inputs need different handling | Conditional |
-| Complex task, unclear how to break down | Supervisor |
-| Need human approval or input | Human-in-the-Loop |
-| Many dependencies, need optimal path | GOAP |
-| Creative/brainstorming, want collaboration | P2P |
+With 8 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
+
+<img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — mapping situations to the recommended agentic pattern: Sequential for simple pipelines, Parallel for multiple perspectives, Loop for quality-critical tasks, Conditional for varied inputs, Supervisor for complex decomposition, Human-in-the-Loop for approval workflows, GOAP for dependency-heavy planning, and P2P for creative collaboration" width="800"/>
+
+| Situation | Recommended Pattern | Why |
+|-----------|---------------------|-----|
+| Simple pipeline with clear steps | **Sequential** | Each step depends on the previous — no branching or parallelism needed |
+| Need multiple perspectives fast | **Parallel** | Fan-out to independent experts, then combine — minimizes latency |
+| Quality is critical, time isn't | **Loop** | Iterative refinement with a critic ensures output meets a quality bar |
+| Different inputs need different handling | **Conditional** | Route to the right specialist based on input classification |
+| Complex task, unclear how to break down | **Supervisor** | Let the LLM decompose the task and delegate dynamically |
+| Need human approval or input | **Human-in-the-Loop** | Gate critical decisions behind human review before proceeding |
+| Many dependencies, need optimal path | **GOAP** | Calculates the shortest execution path through a dependency graph |
+| Creative/brainstorming, want collaboration | **P2P** | Agents react to each other as equals — emergent collaboration |
+
+> **Tip:** Start with the simplest pattern that fits. You can always compose patterns — for example, a Supervisor that delegates to a Loop sub-workflow, or a GOAP plan where individual steps run in Parallel.
 
 ---
 
@@ -503,7 +509,19 @@ This application includes full Azure infrastructure-as-code for one-click deploy
 
 ### Azure Architecture
 
-![Azure Architecture](docs/architecture.png)
+The application deploys as a single container to **Azure Container Apps**, with all resources managed within one Azure Resource Group. The architecture follows a clean separation between compute, AI services, and observability:
+
+<img src="docs/azure-architecture.png" alt="Azure Architecture — Azure Resource Group containing Container Registry deploying to Container Apps Environment (AI Agents App with Java 21 + React), connecting via API calls to Azure OpenAI (text-embedding-3-small and gpt-5-mini) and sending telemetry to Monitoring (Application Insights and Log Analytics)" width="800"/>
+
+| Component | Purpose |
+|-----------|---------|
+| **Container Registry** | Stores the Docker image (Java 21 backend + React frontend bundled together) |
+| **Container Apps Environment** | Serverless container hosting with auto-scaling (1–3 replicas) and built-in ingress |
+| **Azure OpenAI** | Provides `gpt-5-mini` for agent chat completions and `text-embedding-3-small` for vector embeddings |
+| **Application Insights** | Distributed tracing, live metrics, and performance monitoring for the running app |
+| **Log Analytics** | Centralized log aggregation for container logs, request traces, and diagnostics |
+
+All infrastructure is defined as **Bicep templates** in the `infra/` directory and provisioned automatically via `azd up`.
 
 ### Clean Up Resources
 
