@@ -22,10 +22,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 - [Getting Started](#getting-started)
 - [Azure Deployment](#azure-deployment)
 - [Project Structure](#project-structure)
-- [Configuration](#configuration)
 - [API Endpoints](#api-endpoints)
-- [UI Features](#ui-features)
-- [Troubleshooting](#troubleshooting)
 - [FAQ](#faq)
 - [License](#license)
 
@@ -34,6 +31,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 - **8 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
 - **D3.js** animated topology graphs with agent tooltips (hover to see each agent's role)
+- **Event log** with timestamped agent activities and scope state inspector
 - **Dark-themed UI** with Tailwind CSS
 - **Azure OpenAI** integration via LangChain4j
 
@@ -103,14 +101,14 @@ These patterns follow **structured rules** - you define exactly how agents inter
 
 **What it does:** Multiple agents run at the same time, then results are combined.
 
-**Real-world analogy:** Getting opinions from multiple experts simultaneously:
-- **Technical Expert** evaluates feasibility
-- **Business Expert** evaluates cost
-- **Creative Expert** evaluates user appeal
+**Real-world analogy:** Planning a perfect evening by consulting specialists simultaneously:
+- **Food Expert** suggests meals matching your mood
+- **Movie Expert** recommends films matching your mood
 
 **When to use:** When you need diverse perspectives quickly.
 
-**Example prompt:** *"Evaluate this startup idea: AI-powered pet translator"*
+**Example prompt:** *"Plan an evening for a romantic mood"*
+- FoodExpert + MovieExpert run in parallel, then a Combiner merges the results
 
 <img src="docs/pattern-parallel.png" alt="Parallel Workflow Pattern — fan-out/fan-in topology: input fans out to FoodExpert and MovieExpert running simultaneously, then results converge at a Combiner node. Agents execute concurrently for faster results." width="800"/>
 
@@ -380,7 +378,7 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ### Backend
 - **Java 21** with Virtual Threads
-- **Spring Boot 4.0** *(this branch)* — or **Quarkus 3.30.6** on the `quarkus` branch
+- **Spring Boot 4.0.1** *(this branch)* — or **Quarkus 3.30.6** on the `quarkus` branch
 - **LangChain4j 1.10.0** (Core)
 - **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
 - **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
@@ -561,42 +559,10 @@ matrixagents/
 │   │   ├── components/                 # React components
 │   │   ├── context/                    # WebSocket context
 │   │   ├── pages/                      # Page components
-│   │   └── types/                      # TypeScript types
+│   │   └── types.ts                    # TypeScript types
 │   └── package.json
 └── pom.xml
 ```
-
-## Configuration
-
-### Environment Variables
-
-The application reads Azure OpenAI configuration from a `.env` file in the project root:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `AZURE_OPENAI_ENDPOINT` | Your Azure OpenAI resource endpoint | `https://your-resource.openai.azure.com/` |
-| `AZURE_OPENAI_API_KEY` | Your Azure OpenAI API key | `your-api-key` |
-| `AZURE_OPENAI_DEPLOYMENT` | Chat model deployment name | `gpt-5` |
-| `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | Embedding model deployment name | `text-embedding-3-small` |
-
-### Azure OpenAI
-
-The application uses `langchain4j-open-ai-official` which wraps the official OpenAI Java SDK with Azure support:
-
-```java
-OpenAiOfficialChatModel.builder()
-    .baseUrl(endpoint)
-    .apiKey(apiKey)
-    .modelName(deploymentName)
-    .isAzure(true)
-    .build();
-```
-
-### WebSocket
-
-Events are streamed via **STOMP over SockJS** *(this branch)* — or native Quarkus WebSockets on the `quarkus` branch:
-- **Endpoint**: `/ws`
-- **Messages**: JSON events with `type`, `agentName`, `message`, and `patternId`
 
 ## API Endpoints
 
@@ -610,36 +576,9 @@ Events are streamed via **STOMP over SockJS** *(this branch)* — or native Quar
 | GET | `/api/health` | Health check |
 | WS | `/ws` | STOMP over SockJS WebSocket endpoint |
 
-## UI Features
-
-- **Real-time visualization** of agent execution
-- **Event log** with timestamped agent activities
-- **Scope view** showing shared state
-- **Animated D3 graphs** with agent highlighting
-- **Dark-themed** interface
-
-## Troubleshooting
-
-### WebSocket Proxy Error in Dev Mode
-
-When running the frontend with `npm run dev`, you may see this error in the Vite console:
-
-```
-[vite] ws proxy socket error:
-Error: write ECONNABORTED
-```
-
-**This is a cosmetic error** and does not affect functionality. It occurs because the underlying `http-proxy` library (used by Vite's dev server) doesn't properly clean up WebSocket streams when connections are interrupted during page navigation or hot module reload. The app will continue to work normally. This error does not appear in production builds.
-
 ## FAQ
 
 ### General
-
-<details>
-<summary><strong>What is this project?</strong></summary>
-
-A showcase application that demonstrates 8 agentic patterns from LangChain4j with a real-time React frontend. It's designed as a learning tool and reference implementation for building multi-agent AI systems in Java.
-</details>
 
 <details>
 <summary><strong>Is this production-ready?</strong></summary>
@@ -651,7 +590,7 @@ This is a **showcase/demo application**, not a production system. It's designed 
 <summary><strong>What's the difference between the `main` and `quarkus` branches?</strong></summary>
 
 Both branches implement the same 8 agentic patterns with identical functionality. The difference is the backend framework:
-- **`main`** — Spring Boot 4.0 with STOMP/SockJS WebSockets
+- **`main`** — Spring Boot 4.0.1 with STOMP/SockJS WebSockets
 - **`quarkus`** — Quarkus 3.30.6 with native Quarkus WebSockets
 
 The frontend, agent logic, and LangChain4j code are the same across both branches.
@@ -669,18 +608,6 @@ The application uses `langchain4j-open-ai-official` which supports both Azure Op
 <summary><strong>Which OpenAI model do I need?</strong></summary>
 
 The application defaults to `gpt-5` for chat and `text-embedding-3-small` for embeddings. You can configure any compatible chat model via the `AZURE_OPENAI_DEPLOYMENT` environment variable in your `.env` file.
-</details>
-
-<details>
-<summary><strong>Do I need both Java and Node.js installed?</strong></summary>
-
-Yes. The backend requires **Java 21+** and **Maven 3.9+**. The frontend requires **Node.js 18+**. Both must be running simultaneously during development — the backend on port 8080 and the frontend on port 5173.
-</details>
-
-<details>
-<summary><strong>Why do I need a `.env` file?</strong></summary>
-
-The `.env` file keeps your Azure OpenAI credentials out of source control. It's listed in `.gitignore` so it won't be committed. The Spring Boot backend loads it automatically via the `spring-dotenv` library.
 </details>
 
 ### Patterns & Architecture
@@ -712,7 +639,7 @@ This showcase intentionally uses both to demonstrate their equivalence.
 <details>
 <summary><strong>How does the real-time visualization work?</strong></summary>
 
-The `WebSocketAgentListener` implements LangChain4j's `AgentListener` interface. It captures `beforeAgentExecution()` and `afterAgentExecution()` events and publishes them over STOMP/SockJS WebSockets. The React frontend subscribes to these events and updates D3.js graphs in real time.
+The `WebSocketAgentListener` implements LangChain4j's `AgentListener` interface. It captures `beforeAgentInvocation()` and `afterAgentInvocation()` events and publishes them over STOMP/SockJS WebSockets. The React frontend subscribes to these events and updates D3.js graphs in real time.
 </details>
 
 <details>
@@ -738,12 +665,6 @@ Use `azd down` to delete all resources when you're done to avoid ongoing charges
 <summary><strong>Can I deploy without Azure?</strong></summary>
 
 Yes. The application is containerized via the included `Dockerfile`. You can build and run it on any container platform (Docker, Kubernetes, AWS ECS, GCP Cloud Run, etc.). You'll just need to provide the OpenAI credentials as environment variables.
-</details>
-
-<details>
-<summary><strong>What does `azd up` actually create?</strong></summary>
-
-It provisions: Azure Resource Group, Container Registry, Azure OpenAI (with model deployments), Container Apps Environment, a Container App (auto-scaling 1–3 replicas), Log Analytics Workspace, and Application Insights. All defined as Infrastructure-as-Code in the `infra/` directory using Bicep.
 </details>
 
 ### Troubleshooting
