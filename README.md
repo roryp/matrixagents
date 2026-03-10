@@ -216,8 +216,8 @@ Agent              Inputs              Output       Cost
 CityParser         prompt              cities       1
 DistanceCalculator cities              distances    1
 AttractionFinder   cities              attractions  1
-RouteOptimizer     distances           route        1
-ItineraryPlanner   route, attractions  itinerary    1
+RouteOptimizer     distances           route        2
+ItineraryPlanner   route, attractions  itinerary    3
 ```
 
 From this, the planner computes the shortest path from `prompt` → `itinerary`:
