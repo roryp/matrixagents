@@ -34,10 +34,11 @@ export const agentDescriptions: Record<string, Record<string, string>> = {
     ExecutionAgent: "Executes approved proposals incorporating human feedback. Only acts after receiving human authorization."
   },
   goap: {
-    SignExtractor: "Extracts the zodiac sign from the user's prompt. The first planning step in the GOAP chain.",
-    HoroscopeGenerator: "Creates a horoscope reading for the extracted zodiac sign. Provides astrological predictions.",
-    StoryFinder: "Finds mythology and stories related to the zodiac sign. Adds cultural and historical context.",
-    WriterAgent: "Composes the final writeup combining horoscope and mythology. Synthesizes all gathered information."
+    CityParser: "Extracts the list of cities from the user's travel request. The entry point that feeds both parallel branches.",
+    DistanceCalculator: "Calculates distances between all city pairs. Runs in PARALLEL with AttractionFinder (both depend only on cities).",
+    AttractionFinder: "Finds top tourist attractions for each city. Runs in PARALLEL with DistanceCalculator (both depend only on cities).",
+    RouteOptimizer: "Solves the Travelling Salesman Problem to find the optimal route visiting all cities. Depends on distances.",
+    ItineraryPlanner: "Creates the final day-by-day travel itinerary. CONVERGES both parallel branches (route + attractions)."
   },
   p2p: {
     LiteratureAgent: "Searches and summarizes relevant research literature on the topic. Gathers foundational knowledge for hypothesis formation.",

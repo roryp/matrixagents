@@ -111,16 +111,17 @@ public record PatternInfo(
         return new PatternInfo(
             "goap",
             "Goal-Oriented Planning (GOAP)",
-            "Calculates the shortest path through agent dependencies to achieve a goal efficiently.",
+            "Solves the Travelling Salesman Problem by planning optimal routes through agent dependency graphs.",
             "planning",
-            List.of("SignExtractor", "HoroscopeGenerator", "StoryFinder", "WriterAgent"),
+            List.of("CityParser", "DistanceCalculator", "AttractionFinder", "RouteOptimizer", "ItineraryPlanner"),
             Map.of("type", "GOAP", "edges", List.of(
-                Map.of("from", "SignExtractor", "to", "HoroscopeGenerator"),
-                Map.of("from", "SignExtractor", "to", "StoryFinder"),
-                Map.of("from", "HoroscopeGenerator", "to", "WriterAgent"),
-                Map.of("from", "StoryFinder", "to", "WriterAgent")
+                Map.of("from", "CityParser", "to", "DistanceCalculator"),
+                Map.of("from", "CityParser", "to", "AttractionFinder"),
+                Map.of("from", "DistanceCalculator", "to", "RouteOptimizer"),
+                Map.of("from", "RouteOptimizer", "to", "ItineraryPlanner"),
+                Map.of("from", "AttractionFinder", "to", "ItineraryPlanner")
             )),
-            "Generate a personalized horoscope and mythology for someone born on March 15th"
+            "Plan a trip visiting Paris, London, Rome, Berlin and Barcelona"
         );
     }
 
