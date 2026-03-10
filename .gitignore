@@ -64,3 +64,5 @@ next-steps.md
 node_modules/
 IMAGE_GENERATION_GUIDE.md
 docs/gen_image.py
+# Generated presentations
+*.pptx
