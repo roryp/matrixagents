@@ -16,93 +16,110 @@ import dev.langchain4j.service.V;
  * Key: Each agent's @V parameters define inputs, outputKey defines output.
  * The planner uses these to build the dependency graph.
  * 
- * Dependency Graph:
- *   prompt -> sign (via SignExtractor)
- *   sign -> horoscope (via HoroscopeGenerator)
- *   sign -> story (via StoryFinder)
- *   horoscope, story -> writeup (via WriterAgent)
+ * Dependency Graph (TSP Travel Planner):
+ *   prompt -> cities (via CityParser)
+ *   cities -> distances (via DistanceCalculator)  ─┐ parallel
+ *   cities -> attractions (via AttractionFinder)  ─┘ branches
+ *   distances -> route (via RouteOptimizer)
+ *   route, attractions -> itinerary (via ItineraryPlanner) ← GOAL
  */
 public interface GOAPAgents {
 
     /**
-     * SignExtractor: Extracts zodiac sign from the prompt.
-     * Input: prompt -> Output: sign
+     * CityParser: Extracts the list of cities from the user's prompt.
+     * Input: prompt -> Output: cities
      */
-    interface SignExtractor {
+    interface CityParser {
         @SystemMessage("""
-            You are a zodiac expert. Extract or determine the zodiac sign from the text.
-            Look for:
-            - Directly mentioned zodiac signs (Aries, Taurus, Gemini, Cancer, Leo, Virgo, Libra, Scorpio, Sagittarius, Capricorn, Aquarius, Pisces)
-            - Birth dates that can be converted to zodiac signs
+            You are a travel planning assistant. Extract the list of cities from the user's request.
+            Return ONLY a comma-separated list of city names (e.g., "Paris, London, Rome, Berlin").
+            If no specific cities are mentioned, suggest 4-5 interesting cities based on the context.
+            """)
+        @UserMessage("Extract the cities to visit from: {{prompt}}")
+        @Agent("Parse and extract cities from the user's travel request")
+        String parseCities(@V("prompt") String prompt);
+    }
+
+    /**
+     * DistanceCalculator: Estimates distances between all city pairs.
+     * Input: cities -> Output: distances
+     */
+    interface DistanceCalculator {
+        @SystemMessage("""
+            You are a geography expert. Given a list of cities, estimate the approximate
+            driving/flying distances between ALL pairs of cities.
+            Format as a compact distance matrix, e.g.:
+            Paris→London: 450km, Paris→Rome: 1100km, London→Rome: 1430km
+            Keep it concise and factual.
+            """)
+        @UserMessage("Calculate distances between these cities: {{cities}}")
+        @Agent("Calculate distances between all city pairs for route optimization")
+        String calculateDistances(@V("cities") String cities);
+    }
+
+    /**
+     * AttractionFinder: Finds top attractions for each city.
+     * Input: cities -> Output: attractions
+     * NOTE: This runs in PARALLEL with DistanceCalculator (both depend only on cities)
+     */
+    interface AttractionFinder {
+        @SystemMessage("""
+            You are a travel expert. For each city, list 2-3 must-see attractions
+            with a one-line description each.
+            Keep it concise and practical for trip planning.
+            """)
+        @UserMessage("Find top attractions for each of these cities: {{cities}}")
+        @Agent("Find top tourist attractions for each city")
+        String findAttractions(@V("cities") String cities);
+    }
+
+    /**
+     * RouteOptimizer: Finds the optimal travel route (TSP solution).
+     * Input: distances -> Output: route
+     */
+    interface RouteOptimizer {
+        @SystemMessage("""
+            You are a route optimization expert solving the Travelling Salesman Problem.
+            Given the distances between cities, find the shortest route that visits
+            all cities exactly once and returns to the starting city.
             
-            Return ONLY the zodiac sign name (e.g., "Scorpio", "Leo").
-            If no sign can be determined, return "Aries".
+            Show your reasoning briefly, then present the optimal route as:
+            ROUTE: City1 → City2 → City3 → ... → City1
+            TOTAL DISTANCE: approximately Xkm
             """)
-        @UserMessage("What zodiac sign is mentioned or can be determined from: {{prompt}}")
-        @Agent("Extract zodiac sign from user's prompt")
-        String extractSign(@V("prompt") String prompt);
+        @UserMessage("Find the optimal route given these distances:\n{{distances}}")
+        @Agent("Optimize travel route using TSP algorithm on distance data")
+        String optimizeRoute(@V("distances") String distances);
     }
 
     /**
-     * HoroscopeGenerator: Creates a horoscope for a zodiac sign.
-     * Input: sign -> Output: horoscope
+     * ItineraryPlanner: Creates the final travel itinerary.
+     * Inputs: route, attractions -> Output: itinerary (the goal)
+     * This agent CONVERGES the two parallel branches.
      */
-    interface HoroscopeGenerator {
+    interface ItineraryPlanner {
         @SystemMessage("""
-            You are an astrologer. Generate a detailed, personalized horoscope.
-            Include predictions for love, career, health, and general fortune.
-            Make it engaging and positive while feeling authentic.
-            Keep the response concise (3-4 paragraphs).
-            """)
-        @UserMessage("Generate a horoscope for someone who is a {{sign}}:")
-        @Agent("Generate horoscope based on zodiac sign")
-        String generateHoroscope(@V("sign") String sign);
-    }
-
-    /**
-     * StoryFinder: Finds mythology and stories related to the zodiac sign.
-     * Input: sign -> Output: story
-     */
-    interface StoryFinder {
-        @SystemMessage("""
-            You are a mythology expert specializing in zodiac lore.
-            Share an interesting myth, legend, or cultural story about the zodiac sign.
-            Include Greek mythology references and cultural significance.
-            Keep it engaging and educational (2-3 paragraphs).
-            """)
-        @UserMessage("Tell me a mythology story about the zodiac sign {{sign}}:")
-        @Agent("Find mythology and stories related to a zodiac sign")
-        String findStory(@V("sign") String sign);
-    }
-
-    /**
-     * WriterAgent: Composes the final writeup from all gathered information.
-     * Inputs: horoscope, story -> Output: writeup (the goal)
-     */
-    interface WriterAgent {
-        @SystemMessage("""
-            You are a skilled writer who creates beautiful, personalized astrology writeups.
-            Combine the horoscope and mythology into a cohesive, engaging narrative.
+            You are a professional travel planner. Create a day-by-day travel itinerary
+            that follows the optimized route and includes the best attractions at each stop.
             
             Structure your response as:
-            1. A warm greeting
-            2. Zodiac sign overview
-            3. Today's horoscope predictions
-            4. Mythological connections and stories
-            5. A closing blessing
+            - Day 1: [City] - Attractions to visit, travel tips
+            - Day 2: [City] - Attractions to visit, travel tips
+            - ...
             
-            Make it feel personal and magical.
+            Include estimated travel times between cities and practical tips.
+            Make it feel like a real, actionable travel plan.
             """)
         @UserMessage("""
-            Create a personalized astrology writeup:
+            Create a travel itinerary combining the optimal route and attractions:
             
-            Horoscope:
-            {{horoscope}}
+            Optimized Route:
+            {{route}}
             
-            Mythology:
-            {{story}}
+            Attractions:
+            {{attractions}}
             """)
-        @Agent("Compose personalized astrology writeup from horoscope and mythology")
-        String write(@V("horoscope") String horoscope, @V("story") String story);
+        @Agent("Create final travel itinerary from optimized route and attraction data")
+        String planItinerary(@V("route") String route, @V("attractions") String attractions);
     }
 }

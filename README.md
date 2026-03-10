@@ -56,7 +56,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 ### Planning Patterns (Custom Planners)
 | Pattern | Description | Topology |
 |---------|-------------|----------|
-| **GOAP** | Goal-Oriented Action Planning | DAG |
+| **GOAP** | Travelling Salesman via Goal-Oriented Action Planning | DAG |
 | **P2P** | Peer-to-peer decentralized coordination | Mesh |
 
 ## Beginner's Guide to Agentic Patterns
@@ -197,19 +197,48 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 #### 7. GOAP - Goal-Oriented Action Planning (DAG)
 
-**What it does:** Finds the optimal sequence of agents to reach a goal, like GPS finding the shortest route.
+**What it does:** Finds the optimal sequence of agents to reach a goal, like GPS finding the shortest route. The planner builds a dependency graph from each agent's inputs and outputs, then calculates the shortest path from the current state to the goal.
 
-**Real-world analogy:** Planning a dinner party:
-- **Goal:** Serve a gourmet meal
-- **Available actions:** Buy ingredients, prep vegetables, cook main dish, set table, plate food
-- **GOAP finds:** The most efficient order considering dependencies (can't cook before buying ingredients)
+**Real-world analogy:** Solving the Travelling Salesman Problem — planning the most efficient multi-city trip:
+- **Goal:** Produce a complete travel itinerary
+- **Available agents:** CityParser, DistanceCalculator, AttractionFinder, RouteOptimizer, ItineraryPlanner
+- **GOAP finds:** The optimal execution order by analyzing what each agent needs and produces
 
-**When to use:** Complex goals with many possible paths.
+**When to use:** Complex goals with many possible paths and agent dependencies.
 
-**Example prompt:** *"Generate a personalized horoscope for someone born on March 15th"*
-- GOAP calculates the dependency graph and executes: SignExtractor → (HoroscopeGenerator + StoryFinder in parallel) → WriterAgent
+**Example prompt:** *"Plan a trip visiting Paris, London, Rome, Berlin and Barcelona"*
 
-<img src="docs/pattern-goap.png" alt="GOAP Pattern — Goal-Oriented Action Planning with DAG topology: the planner calculates the optimal execution path like GPS navigation. SignExtractor feeds both HoroscopeGenerator and StoryFinder (parallel), which converge at WriterAgent to produce the final writeup. Preconditions and effects drive the dependency graph." width="800"/>
+**How the dependency graph works:**
+
+The `GoalOrientedPlanner` inspects each agent's `@V` input parameters and `outputKey` to build a directed acyclic graph (DAG):
+
+```
+Agent              Inputs              Output       Cost
+─────────────────  ──────────────────  ───────────  ────
+CityParser         prompt              cities       1
+DistanceCalculator cities              distances    1
+AttractionFinder   cities              attractions  1
+RouteOptimizer     distances           route        1
+ItineraryPlanner   route, attractions  itinerary    1
+```
+
+From this, the planner computes the shortest path from `prompt` → `itinerary`:
+
+```
+                    ┌─→ DistanceCalculator ─→ RouteOptimizer ─┐
+prompt → CityParser │                                         ├─→ ItineraryPlanner → itinerary ✓
+                    └─→ AttractionFinder ─────────────────────┘
+```
+
+**Why this route:**
+1. **CityParser** runs first — it's the only agent whose input (`prompt`) is available in the initial state
+2. **DistanceCalculator** and **AttractionFinder** both depend only on `cities` — they form **parallel branches** in the graph (both could theoretically run simultaneously)
+3. **RouteOptimizer** depends on `distances` — it solves the TSP, finding the shortest Hamiltonian circuit through all cities
+4. **ItineraryPlanner** depends on both `route` and `attractions` — it's the **convergence point** that merges both branches into the final day-by-day itinerary
+
+The planner won't execute an agent until all its input keys are present in the `AgenticScope` shared state. This ensures correctness: you can't optimize a route without distances, and you can't plan an itinerary without both the route and the attractions.
+
+<img src="docs/pattern-goap.png" alt="GOAP Pattern — Goal-Oriented Action Planning with DAG topology: CityParser extracts cities, then DistanceCalculator and AttractionFinder run as parallel branches. DistanceCalculator feeds RouteOptimizer which solves the TSP. Both RouteOptimizer and AttractionFinder converge at ItineraryPlanner to produce the final travel itinerary." width="800"/>
 
 ---
 
@@ -247,7 +276,7 @@ With 8 patterns available, picking the right one is the most important design de
 | Different inputs need different handling | **Conditional** | Route to the right specialist based on input classification |
 | Complex task, unclear how to break down | **Supervisor** | Let the LLM decompose the task and delegate dynamically |
 | Need human approval or input | **Human-in-the-Loop** | Gate critical decisions behind human review before proceeding |
-| Many dependencies, need optimal path | **GOAP** | Calculates the shortest execution path through a dependency graph |
+| Many dependencies, need optimal path | **GOAP** | Builds a dependency graph from agent inputs/outputs and finds the shortest execution path |
 | Creative/brainstorming, want collaboration | **P2P** | Agents react to each other as equals — emergent collaboration |
 
 > **Tip:** Start with the simplest pattern that fits. You can always compose patterns — for example, a Supervisor that delegates to a Loop sub-workflow, or a GOAP plan where individual steps run in Parallel.
@@ -337,10 +366,10 @@ The `WebSocketAgentListener` implements `AgentListener` to capture:
 GOAP and P2P use `AgenticServices.plannerBuilder()` with custom planner implementations:
 
 ```java
-// GOAP - Goal-Oriented Action Planning
+// GOAP - Goal-Oriented Action Planning (TSP Travel Planner)
 UntypedAgent goapWorkflow = AgenticServices.plannerBuilder()
-    .subAgents(signExtractor, horoscopeGenerator, storyFinder, writer)
-    .outputKey("writeup")  // The goal state
+    .subAgents(cityParser, distanceCalculator, attractionFinder, routeOptimizer, itineraryPlanner)
+    .outputKey("itinerary")  // The goal state
     .planner(GoalOrientedPlanner::new)  // Calculates shortest path to goal
     .listener(listener)
     .build();

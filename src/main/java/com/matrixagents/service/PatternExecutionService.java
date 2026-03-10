@@ -21,10 +21,11 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PreDestroy;
 
 import com.matrixagents.agents.ConditionalAgents;
-import com.matrixagents.agents.GOAPAgents.HoroscopeGenerator;
-import com.matrixagents.agents.GOAPAgents.SignExtractor;
-import com.matrixagents.agents.GOAPAgents.StoryFinder;
-import com.matrixagents.agents.GOAPAgents.WriterAgent;
+import com.matrixagents.agents.GOAPAgents.AttractionFinder;
+import com.matrixagents.agents.GOAPAgents.CityParser;
+import com.matrixagents.agents.GOAPAgents.DistanceCalculator;
+import com.matrixagents.agents.GOAPAgents.ItineraryPlanner;
+import com.matrixagents.agents.GOAPAgents.RouteOptimizer;
 import com.matrixagents.agents.HumanInLoopAgents.HoroscopeAgent;
 import com.matrixagents.agents.HumanInLoopAgents.ZodiacExtractor;
 import com.matrixagents.agents.LoopAgents.StyleScorer;
@@ -549,10 +550,16 @@ public class PatternExecutionService {
     }
 
     /**
-     * GOAP PATTERN: Goal-Oriented Action Planning
-     * Uses GoalOrientedPlanner which automatically builds a dependency graph from agent 
+     * GOAP PATTERN: Goal-Oriented Action Planning (TSP Travel Planner)
+     * Uses GoalOrientedPlanner which automatically builds a dependency graph from agent
      * input/output keys and calculates the shortest path from current state to the goal.
-     * The planner then executes agents in the computed sequence automatically.
+     * 
+     * Dependency graph:
+     *   prompt -> cities (CityParser)
+     *   cities -> distances (DistanceCalculator)  ─┐ parallel branches
+     *   cities -> attractions (AttractionFinder)  ─┘
+     *   distances -> route (RouteOptimizer)
+     *   route + attractions -> itinerary (ItineraryPlanner) ← GOAL
      */
     private ExecutionResult executeGOAP(String prompt) {
         String executionId = UUID.randomUUID().toString();
@@ -561,42 +568,47 @@ public class PatternExecutionService {
         Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow using GoalOrientedPlanner: Automatic path planning to goal")));
+            events.add(publishEvent(AgentEvent.started("goap", "Starting GOAP workflow using GoalOrientedPlanner: TSP Travel Planner with parallel branches")));
 
             // Create listener for real-time WebSocket events
             WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "goap", events);
 
             // Build agents using AgenticServices.agentBuilder() with proper output keys
             // The GoalOrientedPlanner will analyze these to build the dependency graph:
-            // prompt -> sign -> horoscope, story -> writeup
-            SignExtractor signExtractor = AgenticServices.agentBuilder(SignExtractor.class)
+            // prompt -> cities -> distances, attractions (parallel) -> route -> itinerary
+            CityParser cityParser = AgenticServices.agentBuilder(CityParser.class)
                     .chatModel(chatModel)
-                    .outputKey("sign")  // prompt -> sign
+                    .outputKey("cities")  // prompt -> cities
                     .build();
 
-            HoroscopeGenerator horoscopeGenerator = AgenticServices.agentBuilder(HoroscopeGenerator.class)
+            DistanceCalculator distanceCalculator = AgenticServices.agentBuilder(DistanceCalculator.class)
                     .chatModel(chatModel)
-                    .outputKey("horoscope")  // sign -> horoscope
+                    .outputKey("distances")  // cities -> distances
                     .build();
 
-            StoryFinder storyFinder = AgenticServices.agentBuilder(StoryFinder.class)
+            AttractionFinder attractionFinder = AgenticServices.agentBuilder(AttractionFinder.class)
                     .chatModel(chatModel)
-                    .outputKey("story")  // sign -> story
+                    .outputKey("attractions")  // cities -> attractions (parallel with distances)
                     .build();
 
-            WriterAgent writer = AgenticServices.agentBuilder(WriterAgent.class)
+            RouteOptimizer routeOptimizer = AgenticServices.agentBuilder(RouteOptimizer.class)
                     .chatModel(chatModel)
-                    .outputKey("writeup")  // horoscope, story -> writeup (GOAL)
+                    .outputKey("route")  // distances -> route
+                    .build();
+
+            ItineraryPlanner itineraryPlanner = AgenticServices.agentBuilder(ItineraryPlanner.class)
+                    .chatModel(chatModel)
+                    .outputKey("itinerary")  // route + attractions -> itinerary (GOAL)
                     .build();
 
             // Build GOAP workflow using plannerBuilder with GoalOrientedPlanner
             // The planner will:
             // 1. Build dependency graph from agent input/output keys
-            // 2. Calculate shortest path from "prompt" to "writeup"
-            // 3. Execute agents in computed sequence: signExtractor -> horoscopeGenerator, storyFinder -> writer
+            // 2. Calculate shortest path from "prompt" to "itinerary"
+            // 3. Execute: cityParser -> (distanceCalculator || attractionFinder) -> routeOptimizer -> itineraryPlanner
             UntypedAgent goapWorkflow = AgenticServices.plannerBuilder()
-                    .subAgents(signExtractor, horoscopeGenerator, storyFinder, writer)
-                    .outputKey("writeup")  // The goal state we want to reach
+                    .subAgents(cityParser, distanceCalculator, attractionFinder, routeOptimizer, itineraryPlanner)
+                    .outputKey("itinerary")  // The goal state we want to reach
                     .planner(GoalOrientedPlanner::new)  // Uses GOAP algorithm!
                     .listener(listener)
                     .build();
@@ -608,14 +620,14 @@ public class PatternExecutionService {
             events.add(publishEvent(AgentEvent.agentInvoked("goap", "goalOrientedPlanner", "Computing optimal agent path to goal...")));
             ResultWithAgenticScope<String> result = goapWorkflow.invokeWithAgenticScope(Map.of("prompt", prompt));
 
-            String writeup = result.result();
-            
+            String itinerary = result.result();
+
             // Capture the final scope state
             scope.putAll(listener.getScopeSnapshot());
-            scope.put("writeup", writeup);
+            scope.put("itinerary", itinerary);
 
-            events.add(publishEvent(AgentEvent.completed("goap", writeup)));
-            return ExecutionResult.success(executionId, "goap", writeup, events, scope, startTime);
+            events.add(publishEvent(AgentEvent.completed("goap", itinerary)));
+            return ExecutionResult.success(executionId, "goap", itinerary, events, scope, startTime);
 
         } catch (Exception e) {
             log.error("GOAP execution failed", e);
