@@ -66,3 +66,4 @@ IMAGE_GENERATION_GUIDE.md
 docs/gen_image.py
 # Generated presentations
 *.pptx
+generate_images.py
