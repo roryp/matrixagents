@@ -208,7 +208,7 @@ These patterns use **advanced planning algorithms** for complex orchestration.
 
 **How the dependency graph works:**
 
-The `GoalOrientedPlanner` inspects each agent's `@V` input parameters and `outputKey` to build a directed acyclic graph (DAG):
+The `GoalOrientedPlanner` inspects each agent's `@V` input parameters and `outputKey` to build a **directed acyclic graph (DAG)** — a graph where edges have direction (A → B, not A ↔ B) and there are no cycles, guaranteeing the planner always terminates. Unlike Sequential (chain), Parallel (fan-out), or Loop (cycle), a DAG can express branching, parallelism, and convergence all in one structure, driven purely by data dependencies:
 
 ```
 Agent              Inputs              Output       Cost
