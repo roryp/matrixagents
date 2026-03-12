@@ -38,7 +38,7 @@ resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   name: modelDeploymentName
   sku: {
     name: 'GlobalStandard'
-    capacity: 30
+    capacity: 150
   }
   properties: {
     model: {

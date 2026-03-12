@@ -15,7 +15,7 @@ azure:
   openai:
     endpoint: ${AZURE_OPENAI_ENDPOINT:}
     api-key: ${AZURE_OPENAI_API_KEY:}
-    deployment: ${AZURE_OPENAI_DEPLOYMENT:gpt-5}
+    deployment: ${AZURE_OPENAI_DEPLOYMENT:gpt-5-mini}
     embedding-deployment: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:text-embedding-3-small}
 
 # CORS configuration for React frontend
