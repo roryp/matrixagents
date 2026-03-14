@@ -66,12 +66,47 @@ New to AI agents? This guide explains each pattern in plain English with real-wo
 ### What is an "Agent"?
 
 An **agent** is an AI that can take actions autonomously. Unlike a simple chatbot that just responds to questions, an agent can:
-- Break down complex tasks into steps
-- Use tools and call other agents
-- Make decisions based on context
-- Remember state across interactions
+- **Reason** — break down complex tasks into steps
+- **Act** — use tools and call APIs to do real work
+- **Remember** — maintain state across interactions
+- **Collaborate** — work with other agents toward a shared goal
 
-Think of agents like specialized workers in a factory - each has a specific job, and they work together to produce a result.
+<img src="docs/what-is-an-agent.png" alt="What is an AI Agent? — Left: a Simple Chatbot does a basic question-and-answer exchange with no memory or actions. Right: an AI Agent has four capabilities radiating outward — Reason (break down tasks), Act (call tools and APIs), Remember (maintain state), and Collaborate (work with other agents) — producing autonomous results." width="800"/>
+
+A chatbot is **reactive** — you ask, it answers, it forgets. An agent is **proactive** — it receives a goal, plans how to achieve it, takes actions on its own, and remembers context along the way. When you ask a chatbot "Plan me a trip to Tokyo," it gives you a wall of text. When you ask an agent, it researches flights, checks your calendar, books hotels, and comes back with a complete itinerary.
+
+### Inside an Agent
+
+Every agent in LangChain4j is built from four core building blocks, stacked like layers:
+
+1. **System Prompt** — defines who the agent is: its role, expertise, and constraints (*"You are a financial analyst who..."*)
+2. **LLM** — the reasoning engine that processes input and generates responses (e.g., Azure OpenAI `gpt-5`)
+3. **Tools** — optional actions the agent can invoke: database queries, API calls, calculations
+4. **Output Key** — where the agent writes its result into shared state (`@Agent(outputKey = "analysis")`)
+
+<img src="docs/agent-anatomy.png" alt="Anatomy of a LangChain4j Agent — an agent container with four internal layers: System Prompt (defines role), LLM (Azure OpenAI reasoning engine), Tools (Calculator, Web Search, Database Query), and Output Key (@Agent outputKey). Input flows in from AgenticScope on the left, output flows out to AgenticScope on the right." width="800"/>
+
+The flow is straightforward: input arrives from the **AgenticScope** (shared state), the agent processes it through its prompt + LLM + tools, then writes the result back to the AgenticScope via its output key. This is how agents pass data to each other — they never call each other directly; they communicate through shared state.
+
+### Why Multi-Agent?
+
+A single agent can handle simple tasks, but hits a wall with complex problems. It tries to be an expert in everything and ends up mediocre at all of it. **Multi-agent systems** solve this through specialization — the same way a hospital doesn't have one doctor treating every condition.
+
+<img src="docs/single-vs-multi-agent.png" alt="Single Agent vs Multi-Agent Systems — Left: a single agent handles everything alone, limited by one perspective. Right: a multi-agent system with specialized Research, Writing, and Review agents connected through AgenticScope shared state, enabling specialization, parallelism, and quality." width="800"/>
+
+In a multi-agent system, each agent has a **narrow focus** — one researches, one writes, one reviews. They share data through the **AgenticScope**, so the writing agent reads what the research agent found, and the review agent critiques what the writing agent produced. This gives you three benefits you can't get from a single agent: **specialization** (each agent is an expert), **parallelism** (independent agents can run simultaneously), and **quality** (agents can check each other's work).
+
+### The Three Categories
+
+The 8 patterns in this showcase are organized into three tiers based on **who controls the orchestration**:
+
+- **Workflow Patterns** — *you* define the rules in code. Agents follow a fixed path: sequential, parallel, looping, or branching. Predictable and easy to debug.
+- **Agentic Patterns** — the *LLM* decides what happens next. A supervisor agent plans and delegates, or the system pauses for human judgment. More flexible, less predictable.
+- **Planning Patterns** — *algorithms* calculate the optimal execution plan. GOAP finds the shortest path through a dependency graph; P2P lets agents self-organize. Most autonomous, most powerful.
+
+<img src="docs/agentic-patterns-overview.png" alt="The Three Categories of Agentic Patterns — Tier 1 Workflow Patterns (you define the rules): Sequential, Parallel, Loop, Conditional. Tier 2 Agentic Patterns (the LLM decides): Supervisor, Human-in-the-Loop. Tier 3 Planning Patterns (algorithms optimize): GOAP, P2P. Increasing autonomy from top to bottom." width="800"/>
+
+As you move down from Workflow to Planning, agents gain **increasing autonomy** — but also increasing complexity. Start at the top. Most real-world problems are solved with Sequential or Parallel. Only reach for Supervisor or GOAP when the simpler patterns genuinely can't handle it.
 
 ---
 
