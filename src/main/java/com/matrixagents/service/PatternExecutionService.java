@@ -340,66 +340,74 @@ public class PatternExecutionService {
 
     /**
      * CONDITIONAL PATTERN: Router -> Expert activation based on category
-     * Uses @Agent (CategoryRouter) for classification, then routes to the appropriate
-     * @Agent expert (Medical, Legal, Technical) based on the classified category.
+     * Uses AgenticServices.conditionalBuilder() with lambda-based predicates for routing,
+     * composed with CategoryRouter via AgenticServices.sequenceBuilder().
+     * The AgenticScope propagates the "category" state from router to conditional predicates.
      */
     private ExecutionResult executeConditional(String prompt) {
         String executionId = UUID.randomUUID().toString();
         Instant startTime = Instant.now();
         List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
-        Map<String, Object> scope = new ConcurrentHashMap<>();
 
         try {
-            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow: CategoryRouter → Expert activation based on classification")));
+            events.add(publishEvent(AgentEvent.started("conditional", "Starting conditional workflow using AgenticServices.conditionalBuilder(): CategoryRouter → Expert routing")));
 
-            scope.put("request", prompt);
-            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "request", truncate(prompt))));
+            // Create listener for real-time WebSocket events
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "conditional", events);
 
-            // Step 1: Classify the request using CategoryRouter
-            ConditionalAgents.CategoryRouter router = AgenticServices.agentBuilder(ConditionalAgents.CategoryRouter.class)
+            // Step 1: Build CategoryRouter agent
+            ConditionalAgents.CategoryRouter routerAgent = AgenticServices
+                    .agentBuilder(ConditionalAgents.CategoryRouter.class)
                     .chatModel(chatModel)
                     .outputKey("category")
                     .build();
 
-            events.add(publishEvent(AgentEvent.agentInvoked("conditional", "categoryRouter", "Classifying request...")));
-            ConditionalAgents.RequestCategory category = router.classify(prompt);
-            events.add(publishEvent(AgentEvent.agentCompleted("conditional", "categoryRouter", "Classified as: " + category)));
+            // Step 2: Build expert agents
+            ConditionalAgents.MedicalExpert medicalExpert = AgenticServices
+                    .agentBuilder(ConditionalAgents.MedicalExpert.class)
+                    .chatModel(chatModel)
+                    .outputKey("response")
+                    .build();
+            ConditionalAgents.LegalExpert legalExpert = AgenticServices
+                    .agentBuilder(ConditionalAgents.LegalExpert.class)
+                    .chatModel(chatModel)
+                    .outputKey("response")
+                    .build();
+            ConditionalAgents.TechnicalExpert technicalExpert = AgenticServices
+                    .agentBuilder(ConditionalAgents.TechnicalExpert.class)
+                    .chatModel(chatModel)
+                    .outputKey("response")
+                    .build();
 
+            // Step 3: Build conditional agent using conditionalBuilder() with lambda predicates
+            UntypedAgent expertsAgent = AgenticServices.conditionalBuilder()
+                    .subAgents(agenticScope -> agenticScope.readState("category", ConditionalAgents.RequestCategory.UNKNOWN) == ConditionalAgents.RequestCategory.MEDICAL, medicalExpert)
+                    .subAgents(agenticScope -> agenticScope.readState("category", ConditionalAgents.RequestCategory.UNKNOWN) == ConditionalAgents.RequestCategory.LEGAL, legalExpert)
+                    .subAgents(agenticScope -> agenticScope.readState("category", ConditionalAgents.RequestCategory.UNKNOWN) == ConditionalAgents.RequestCategory.TECHNICAL, technicalExpert)
+                    .build();
+
+            // Step 4: Compose router + conditional in a sequence
+            UntypedAgent expertRouter = AgenticServices.sequenceBuilder()
+                    .name("expertRouter")
+                    .subAgents(routerAgent, expertsAgent)
+                    .listener(listener)
+                    .outputKey("response")
+                    .build();
+
+            // Execute the full conditional workflow
+            ResultWithAgenticScope<String> result = expertRouter.invokeWithAgenticScope(
+                    Map.of("request", prompt));
+
+            String response = String.valueOf(result.result());
+
+            // Extract scope state
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
+            scope.put("request", prompt);
+            ConditionalAgents.RequestCategory category = result.agenticScope()
+                    .readState("category", ConditionalAgents.RequestCategory.UNKNOWN);
             scope.put("category", category.toString());
-            events.add(publishEvent(AgentEvent.stateUpdated("conditional", "category", category.toString())));
-
-            // Step 2: Route to the appropriate expert based on classification
-            String expertName = switch (category) {
-                case MEDICAL -> "medicalExpert";
-                case LEGAL -> "legalExpert";
-                case TECHNICAL -> "technicalExpert";
-                case UNKNOWN -> "unknown";
-            };
-
-            events.add(publishEvent(AgentEvent.agentInvoked("conditional", expertName, "Activated " + category + " expert for request")));
-
-            String response = switch (category) {
-                case MEDICAL -> {
-                    ConditionalAgents.MedicalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.MedicalExpert.class)
-                            .chatModel(chatModel).outputKey("response").build();
-                    yield expert.medical(prompt);
-                }
-                case LEGAL -> {
-                    ConditionalAgents.LegalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.LegalExpert.class)
-                            .chatModel(chatModel).outputKey("response").build();
-                    yield expert.legal(prompt);
-                }
-                case TECHNICAL -> {
-                    ConditionalAgents.TechnicalExpert expert = AgenticServices.agentBuilder(ConditionalAgents.TechnicalExpert.class)
-                            .chatModel(chatModel).outputKey("response").build();
-                    yield expert.technical(prompt);
-                }
-                case UNKNOWN -> "I'm sorry, I can only assist with medical, legal, or technical questions. Please rephrase your request.";
-            };
-
-            events.add(publishEvent(AgentEvent.agentCompleted("conditional", expertName, truncate(response))));
-
             scope.put("response", response);
+
             events.add(publishEvent(AgentEvent.completed("conditional", response)));
             return ExecutionResult.success(executionId, "conditional", response, events, scope, startTime);
 
