@@ -329,7 +329,7 @@ MyWorkflow workflow = AgenticServices.createAgenticSystem(MyWorkflow.class, mode
 | **Sequence** | Programmatic | `AgenticServices.sequenceBuilder()` |
 | **Parallel** | Declarative | `AgenticServices.createAgenticSystem()` with `@Parallel` |
 | **Loop** | Programmatic | `AgenticServices.loopBuilder()` |
-| **Conditional** | Programmatic | `AgenticServices.agentBuilder()` with manual routing |
+| **Conditional** | Programmatic | `AgenticServices.conditionalBuilder()` + `sequenceBuilder()` |
 | **Supervisor** | Programmatic | `AgenticServices.supervisorBuilder()` |
 | **Human-in-Loop** | Programmatic | `AgenticServices.agentBuilder()` |
 | **GOAP** | Programmatic | `AgenticServices.plannerBuilder()` + `GoalOrientedPlanner` |

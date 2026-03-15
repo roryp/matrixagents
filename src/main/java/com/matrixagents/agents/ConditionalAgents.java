@@ -1,18 +1,16 @@
 package com.matrixagents.agents;
 
 import dev.langchain4j.agentic.Agent;
-import dev.langchain4j.agentic.declarative.ActivationCondition;
-import dev.langchain4j.agentic.declarative.ConditionalAgent;
-import dev.langchain4j.agentic.declarative.SequenceAgent;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
 /**
  * Agents for the CONDITIONAL PATTERN using langchain4j-agentic module.
  * Demonstrates routing to different agents based on classification.
- * Pattern: CategoryRouter classifies -> Conditional expert activation.
+ * Pattern: CategoryRouter classifies -> AgenticServices.conditionalBuilder() routes to expert.
  * 
- * Uses @Agent with @ConditionalAgent and @ActivationCondition for routing.
+ * Uses @Agent interfaces wired imperatively via AgenticServices.conditionalBuilder()
+ * and AgenticServices.sequenceBuilder() in PatternExecutionService.
  */
 public interface ConditionalAgents {
 
@@ -84,37 +82,12 @@ public interface ConditionalAgents {
     }
 
     /**
-     * ExpertRouterAgent: Typed interface for the conditional workflow.
-     * Routes to appropriate expert based on category classification.
+     * ExpertRouterAgent: Typed interface for the full conditional workflow.
+     * Wired via AgenticServices.sequenceBuilder() composing CategoryRouter
+     * with a conditionalBuilder() that routes to the appropriate expert.
      */
     interface ExpertRouterAgent {
-        @ConditionalAgent(outputKey = "response", subAgents = {MedicalExpert.class, TechnicalExpert.class, LegalExpert.class})
-        String askExpert(@V("request") String request);
-
-        @ActivationCondition(MedicalExpert.class)
-        static boolean activateMedical(@V("category") RequestCategory category) {
-            return category == RequestCategory.MEDICAL;
-        }
-
-        @ActivationCondition(TechnicalExpert.class)
-        static boolean activateTechnical(@V("category") RequestCategory category) {
-            return category == RequestCategory.TECHNICAL;
-        }
-
-        @ActivationCondition(LegalExpert.class)
-        static boolean activateLegal(@V("category") RequestCategory category) {
-            return category == RequestCategory.LEGAL;
-        }
-    }
-
-    /**
-     * ExpertChatbot: Combines CategoryRouter and ExpertRouterAgent in a sequence.
-     * This is the typed interface for the full conditional workflow.
-     * The sequence ensures both agents share the same AgenticScope.
-     * Uses @SequenceAgent to declaratively compose CategoryRouter (classifier) with ExpertRouterAgent (conditional router).
-     */
-    interface ExpertChatbot {
-        @SequenceAgent(outputKey = "response", subAgents = {CategoryRouter.class, ExpertRouterAgent.class})
+        @Agent
         String ask(@V("request") String request);
     }
 }
