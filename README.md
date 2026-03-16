@@ -406,9 +406,9 @@ String hypothesis = scope.readState("hypothesis", "");
 ### Backend
 - **Java 21** with Virtual Threads
 - **Quarkus 3.30.6** *(this branch)* — or **Spring Boot 4.0.1** on the `main` branch
-- **LangChain4j 1.10.0** (Core)
-- **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
-- **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
+- **LangChain4j 1.12.2** (Core)
+- **LangChain4j Agentic 1.12.2-beta22** (Agent framework)
+- **LangChain4j OpenAI Official 1.12.2-beta22** (Azure OpenAI)
 - **Native Quarkus WebSockets** *(this branch)* — or STOMP over SockJS on `main` branch
 
 ### Frontend
