@@ -457,12 +457,12 @@ String hypothesis = scope.readState("hypothesis", "");
 
 ## Getting Started
 
-<img src="docs/getting-started-agentic.png" alt="Getting Started with LangChain4j Agentic Module — 4 steps: Add Dependencies, Configure Azure OpenAI, Define Your Agents, Choose a Pattern" width="800"/>
+<img src="docs/getting-started-agentic.png" alt="Getting Started with LangChain4j Agentic Module — 4 steps: Add Dependencies, Configure Your LLM, Define Your Agents, Choose a Pattern" width="800"/>
 
 Getting up and running with the LangChain4j Agentic module takes just **4 steps**:
 
-1. **Add Dependencies** — Add `langchain4j-agentic` (1.10.0-beta18) to your `pom.xml` or `build.gradle`. This module provides the agent builders, `AgenticScope`, and pattern orchestration APIs.
-2. **Configure Azure OpenAI** — Set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and `AZURE_OPENAI_DEPLOYMENT` as environment variables (or in a `.env` file). These connect your agents to the LLM backend.
+1. **Add Dependencies** — Add `langchain4j-agentic` to your `pom.xml` or `build.gradle`. This module provides the agent builders, `AgenticScope`, and pattern orchestration APIs.
+2. **Configure Your LLM** — Configure your LLM provider. For example, with Azure OpenAI set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and `AZURE_OPENAI_DEPLOYMENT` as environment variables (or in a `.env` file). These connect your agents to the LLM backend.
 3. **Define Your Agents** — Create agent instances with roles, goals, and tools using the `Agent` builder pattern. Each agent is a specialist with a focused responsibility.
 4. **Choose a Pattern** — Wire your agents into one of the 8 supported patterns (Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, or P2P) using `AgenticServices` builders.
 
