@@ -10,6 +10,9 @@ param name string
 @description('Chat model deployment name')
 param modelDeploymentName string
 
+@description('Chat model name')
+param modelName string
+
 @description('Chat model version')
 param modelVersion string
 
@@ -43,7 +46,7 @@ resource chatModelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-5-mini'
+      name: modelName
       version: modelVersion
     }
     raiPolicyName: 'Microsoft.DefaultV2'

@@ -9,11 +9,14 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
+@description('Azure OpenAI chat model name')
+param openAiModelName string = 'gpt-4o-mini'
+
 @description('Azure OpenAI model deployment name')
-param openAiModelDeployment string = 'gpt-5-mini'
+param openAiModelDeployment string = 'gpt-4o-mini-fast'
 
 @description('Azure OpenAI model version')
-param openAiModelVersion string = '2025-08-07'
+param openAiModelVersion string = '2024-07-18'
 
 @description('Azure OpenAI embedding model deployment name')
 param openAiEmbeddingDeployment string = 'text-embedding-3-small'
@@ -64,6 +67,7 @@ module openAi './modules/openai.bicep' = {
     tags: tags
     name: '${abbrs.cognitiveServicesAccounts}${resourceToken}'
     modelDeploymentName: openAiModelDeployment
+    modelName: openAiModelName
     modelVersion: openAiModelVersion
     embeddingDeploymentName: openAiEmbeddingDeployment
     embeddingVersion: openAiEmbeddingVersion

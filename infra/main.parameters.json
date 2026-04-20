@@ -8,11 +8,14 @@
     "location": {
       "value": "${AZURE_LOCATION}"
     },
+    "openAiModelName": {
+      "value": "gpt-4o-mini"
+    },
     "openAiModelDeployment": {
-      "value": "gpt-5-mini"
+      "value": "gpt-4o-mini-fast"
     },
     "openAiModelVersion": {
-      "value": "2025-08-07"
+      "value": "2024-07-18"
     },
     "openAiEmbeddingDeployment": {
       "value": "text-embedding-3-small"
