@@ -40,28 +40,28 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.12.2</version>
+            <version>1.14.0</version>
         </dependency>
 
         <!-- LangChain4j Agentic Module - REAL AGENTS -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic</artifactId>
-            <version>1.12.2-beta22</version>
+            <version>1.14.0-beta24</version>
         </dependency>
 
         <!-- LangChain4j Agentic Patterns (GOAP, P2P) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic-patterns</artifactId>
-            <version>1.12.2-beta22</version>
+            <version>1.14.0-beta24</version>
         </dependency>
 
         <!-- OpenAI Official SDK Provider (supports Azure OpenAI) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-official</artifactId>
-            <version>1.12.2-beta22</version>
+            <version>1.14.0-beta24</version>
         </dependency>
 
         <!-- Azure Identity for Azure OpenAI authentication -->
