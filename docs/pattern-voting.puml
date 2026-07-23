@@ -3,7 +3,7 @@
 
 title 11. Voting\n<size:14>Independent specialist ballots are aggregated by majority vote</size>
 
-left to right direction
+top to bottom direction
 
 rectangle "Investment Proposal" as input #E2E8F0
 rectangle "GrowthAnalyst\n<size:11>upside + momentum</size>" as growth #FFEDD5
@@ -20,7 +20,7 @@ value --> majority : voteValue
 risk --> majority : voteRisk
 majority --> output : decision
 
-growth -[hidden]down-> value
-value -[hidden]down-> risk
+growth -[hidden]right-> value
+value -[hidden]right-> risk
 
 @enduml

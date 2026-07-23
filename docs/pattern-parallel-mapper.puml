@@ -3,7 +3,7 @@
 
 title 3. Parallel Mapper (Map-Reduce)\n<size:14>One ReviewAnalyzer instance is created for every input item</size>
 
-left to right direction
+top to bottom direction
 
 rectangle "Review Batch\n<size:11>reviews[0..n]</size>" as batch #E2E8F0
 rectangle "Parallel Mapper\n<size:11>fan out by item</size>" as mapper #FEF3C7
@@ -22,7 +22,7 @@ worker2 --> aggregate : analysis 2
 workern --> aggregate : analysis n
 aggregate --> output
 
-worker1 -[hidden]down-> worker2
-worker2 -[hidden]down-> workern
+worker1 -[hidden]right-> worker2
+worker2 -[hidden]right-> workern
 
 @enduml

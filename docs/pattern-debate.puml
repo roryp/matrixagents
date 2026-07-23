@@ -4,7 +4,7 @@ skinparam linetype polyline
 
 title 10. Debate\n<size:14>Three perspectives refine their positions in parallel before a judge decides</size>
 
-left to right direction
+top to bottom direction
 
 rectangle "Question" as input #E2E8F0
 
@@ -18,10 +18,10 @@ package "Parallel debate rounds (maximum 3)" #FFF7ED {
     skeptic --> context : argument
     pragmatist --> context : argument
 
-    proponent -[hidden]down-> skeptic
-    skeptic -[hidden]down-> pragmatist
+    proponent -[hidden]right-> skeptic
+    skeptic -[hidden]right-> pragmatist
 
-        note bottom of context
+        note right of context
             Every next round receives the full debateContext.
             Stop on unanimous last words or after round 3.
         end note

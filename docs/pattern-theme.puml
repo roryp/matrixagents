@@ -1,5 +1,6 @@
 !theme plain
 skinparam backgroundColor #F8FAFC
+skinparam dpi 180
 skinparam shadowing false
 skinparam roundCorner 14
 skinparam defaultFontName Arial

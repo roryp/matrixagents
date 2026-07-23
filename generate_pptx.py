@@ -139,6 +139,7 @@ patterns = [
         "title": "3. Parallel Mapper",
         "subtitle": "Concurrent Map-Reduce",
         "image": "pattern-parallel-mapper.png",
+        "layout": "portrait",
         "bullets": [
             "Creates one worker instance per collection item",
             "Processes the full batch concurrently while preserving order",
@@ -216,6 +217,7 @@ patterns = [
         "title": "10. Debate",
         "subtitle": "Multi-Round Panel — Custom Planner",
         "image": "pattern-debate.png",
+        "layout": "portrait",
         "bullets": [
             "Opposing perspectives refine arguments in parallel rounds",
             "Shared debate context lets agents respond to prior positions",
@@ -227,6 +229,7 @@ patterns = [
         "title": "11. Voting",
         "subtitle": "Ensemble Decision — Custom Planner",
         "image": "pattern-voting.png",
+        "layout": "portrait",
         "bullets": [
             "Independent specialists cast comparable categorical ballots",
             "A voting strategy aggregates one collective decision",
@@ -256,22 +259,31 @@ for pat in patterns:
         dpi = 96
         emu_w = int(img_w / dpi * 914400)
         emu_h = int(img_h / dpi * 914400)
-        max_w = Inches(12.1)
-        max_h = Inches(3.7)
+        portrait_layout = pat.get("layout") == "portrait"
+        max_w = Inches(6.2 if portrait_layout else 12.1)
+        max_h = Inches(5.7 if portrait_layout else 3.7)
         scale = min(max_w / emu_w, max_h / emu_h)
         final_w = int(emu_w * scale)
         final_h = int(emu_h * scale)
-        left = int((SLIDE_W - final_w) / 2)
+        if portrait_layout:
+            left = Inches(0.6) + int((max_w - final_w) / 2)
+        else:
+            left = int((SLIDE_W - final_w) / 2)
         top = Inches(1.35) + int((max_h - final_h) / 2)
         slide.shapes.add_picture(img_path, left, top, final_w, final_h)
 
-        # Keep supporting points in two compact columns below the diagram.
-        left_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][:2])
-        right_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][2:])
-        add_textbox(slide, Inches(0.7), Inches(5.35), Inches(5.9), Inches(1.5),
-            left_bullets, font_size=13, color=TEXT_COLOR)
-        add_textbox(slide, Inches(6.75), Inches(5.35), Inches(5.9), Inches(1.5),
-            right_bullets, font_size=13, color=TEXT_COLOR)
+        if portrait_layout:
+            bullets = "\n\n".join(f"•  {bullet}" for bullet in pat["bullets"])
+            add_textbox(slide, Inches(7.15), Inches(1.85), Inches(5.5), Inches(4.8),
+                bullets, font_size=17, color=TEXT_COLOR)
+        else:
+            # Keep supporting points in two compact columns below wide diagrams.
+            left_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][:2])
+            right_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][2:])
+            add_textbox(slide, Inches(0.7), Inches(5.35), Inches(5.9), Inches(1.5),
+                left_bullets, font_size=13, color=TEXT_COLOR)
+            add_textbox(slide, Inches(6.75), Inches(5.35), Inches(5.9), Inches(1.5),
+                right_bullets, font_size=13, color=TEXT_COLOR)
 
 # ── Slide: Choosing the Right Pattern ───────────────────────────
 slide = prs.slides.add_slide(prs.slide_layouts[6])
