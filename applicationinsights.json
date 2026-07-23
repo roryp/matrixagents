@@ -3,15 +3,11 @@
   "role": {
     "name": "matrix-agents-showcase"
   },
-  "instrumentation": {
-    "http": {
-      "captureHeaders": {
-        "request": ["x-ms-client-request-id", "api-key-present"],
-        "response": ["x-ms-request-id", "x-ratelimit-remaining-requests"]
-      }
-    }
-  },
   "preview": {
+    "captureHttpClientHeaders": {
+      "requestHeaders": ["x-ms-client-request-id", "api-key-present"],
+      "responseHeaders": ["x-ms-request-id", "x-ratelimit-remaining-requests"]
+    },
     "captureHttpServer4xxAsError": false
   },
   "selfDiagnostics": {

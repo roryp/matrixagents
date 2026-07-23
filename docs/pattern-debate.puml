@@ -1,0 +1,41 @@
+@startuml pattern-debate
+!include pattern-theme.puml
+skinparam linetype polyline
+
+title 10. Debate\n<size:14>Three perspectives refine their positions in parallel before a judge decides</size>
+
+top to bottom direction
+
+rectangle "Question" as input #E2E8F0
+
+package "DEBATE ROUNDS" #FFF7ED {
+    rectangle "Round Controller\n<size:11>parallel debate - maximum 3 rounds</size>" as rounds #FEF3C7
+    rectangle "Proponent\n<size:11>benefits + opportunity</size>" as proponent #FFEDD5
+    rectangle "Skeptic\n<size:11>risk + downside</size>" as skeptic #FFEDD5
+    rectangle "Pragmatist\n<size:11>feasibility + trade-offs</size>" as pragmatist #FFEDD5
+    rectangle "Shared debateContext\n<size:11>all arguments + verdicts</size>" as context #FEF3C7
+
+    rounds --> proponent
+    rounds --> skeptic
+    rounds --> pragmatist
+    proponent --> context : argument
+    skeptic --> context : argument
+    pragmatist --> context : argument
+
+    proponent -[hidden]right-> skeptic
+    skeptic -[hidden]right-> pragmatist
+
+        note right of context
+            Every next round receives the full debateContext.
+            Stop on unanimous last words or after round 3.
+        end note
+}
+
+rectangle "Judge\n<size:11>synthesizes debate</size>" as judge #FFEDD5
+rectangle "Final Verdict" as output #DCFCE7
+
+input --> rounds
+context --> judge
+judge --> output : verdict
+
+@enduml

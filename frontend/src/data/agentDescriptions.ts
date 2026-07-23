@@ -29,9 +29,9 @@ export const agentDescriptions: Record<string, Record<string, string>> = {
     ExchangeAgent: "Handles currency exchange operations using the ExchangeTool. Called by the Supervisor for forex operations."
   },
   "human-in-loop": {
-    ProposalAgent: "Creates proposals that require human approval. Generates initial recommendations or actions for review.",
-    Human: "Human reviewer who approves or rejects proposals. Provides feedback and final authorization.",
-    ExecutionAgent: "Executes approved proposals incorporating human feedback. Only acts after receiving human authorization."
+    ZodiacExtractor: "Extracts a zodiac sign from the prompt. If none is present, the workflow pauses and asks the user.",
+    Human: "Provides the missing zodiac sign through the real-time input modal so the workflow can resume.",
+    HoroscopeAgent: "Generates the personalized horoscope after the zodiac sign is available."
   },
   goap: {
     CityParser: "Extracts the list of cities from the user's travel request. The entry point that feeds both parallel branches.",
@@ -46,6 +46,24 @@ export const agentDescriptions: Record<string, Record<string, string>> = {
     CriticAgent: "Critiques hypotheses and identifies weaknesses or gaps. Provides adversarial review of propositions.",
     ValidationAgent: "Validates or reformulates hypotheses based on critique. Refines propositions for accuracy.",
     ScorerAgent: "Scores the quality of the final hypothesis from 0.0 to 1.0. Determines if the result meets quality standards."
+  },
+  "parallel-mapper": {
+    start: "Virtual entry point that fans the batch of items out to parallel worker instances.",
+    ReviewAnalyzer: "Analyzes a single customer review, classifying sentiment and extracting the key point. The mapper creates one instance per review and runs them concurrently.",
+    combiner: "Virtual aggregation point that collects every worker result into a single ordered list."
+  },
+  debate: {
+    Judge: "Impartial moderator and the last sub-agent. Reads the full debate history and synthesizes a balanced final verdict.",
+    Proponent: "Argues in favor of the proposition, emphasizing benefits and opportunities. Refines its stance after reading the other debaters.",
+    Skeptic: "Argues against the proposition, emphasizing risks, costs, and unintended consequences. Refines its stance each round.",
+    Pragmatist: "Argues from practical outcomes, feasibility, and real-world trade-offs. Refines its stance after weighing the other arguments."
+  },
+  voting: {
+    start: "Virtual entry point that dispatches the same proposal to every voter concurrently.",
+    GrowthAnalyst: "Votes BUY/HOLD/SELL from a growth and upside perspective. One independent ballot in the ensemble.",
+    ValueAnalyst: "Votes BUY/HOLD/SELL from a valuation and fundamentals perspective. One independent ballot in the ensemble.",
+    RiskAnalyst: "Votes BUY/HOLD/SELL from a risk-management perspective. One independent ballot in the ensemble.",
+    combiner: "Virtual aggregation point that tallies the ballots and applies the majority voting strategy."
   }
 };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
@@ -32,7 +32,7 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
   const [localEvents, setLocalEvents] = useState<AgentEvent[]>([])
   const [scope, setScope] = useState<Record<string, unknown>>({})
   const [humanInputRequest, setHumanInputRequest] = useState<{ requestId: string; prompt: string } | null>(null)
-  const [handledRequestIds, setHandledRequestIds] = useState<Set<string>>(new Set())
+  const handledRequestIds = useRef<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'visualization' | 'events' | 'scope'>('visualization')
 
   const { events: wsEvents, subscribe, clearEvents } = useWebSocket()
@@ -60,12 +60,18 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
         // Check for human input request (only if not already handled)
         if (event.eventType === 'HUMAN_INPUT_REQUIRED') {
           const requestId = event.data.requestId as string
-          if (!handledRequestIds.has(requestId)) {
+          if (!handledRequestIds.current.has(requestId)) {
             setHumanInputRequest({
               requestId,
               prompt: event.message
             })
           }
+        }
+
+        if (event.eventType === 'HUMAN_INPUT_RECEIVED') {
+          const requestId = event.data.requestId as string
+          handledRequestIds.current.add(requestId)
+          setHumanInputRequest(current => current?.requestId === requestId ? null : current)
         }
       })
     }
@@ -95,7 +101,7 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
     setResult(null)
     setLocalEvents([])
     setScope({})
-    setHandledRequestIds(new Set())
+    handledRequestIds.current.clear()
     clearEvents()
 
     try {
@@ -117,9 +123,15 @@ export default function PatternDetail({ patterns }: PatternDetailProps) {
   const handleHumanInput = async (input: string) => {
     if (humanInputRequest) {
       const requestId = humanInputRequest.requestId
-      await provideHumanInput(requestId, input)
-      setHandledRequestIds(prev => new Set(prev).add(requestId))
+      handledRequestIds.current.add(requestId)
       setHumanInputRequest(null)
+      try {
+        await provideHumanInput(requestId, input)
+      } catch (error) {
+        handledRequestIds.current.delete(requestId)
+        setHumanInputRequest({ requestId, prompt: humanInputRequest.prompt })
+        throw error
+      }
     }
   }
 

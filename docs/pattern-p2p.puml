@@ -1,20 +1,29 @@
-@startuml p2p
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-p2p
+!include pattern-theme.puml
+skinparam linetype polyline
 
-title P2P Pattern (Mesh)
+title 9. Peer-to-Peer (P2P)\n<size:14>Peers react to shared-state changes until hypothesis quality reaches 0.75</size>
 
-rectangle "Literature\nAgent" as p2p1 #PaleTurquoise
-rectangle "Hypothesis\nAgent" as p2p2 #PaleTurquoise
-rectangle "Critic\nAgent" as p2p3 #PaleTurquoise
-rectangle "Validation\nAgent" as p2p4 #PaleTurquoise
-rectangle "Scorer\nAgent" as p2p5 #PaleTurquoise
+left to right direction
 
-p2p1 --> p2p2
-p2p2 --> p2p3
-p2p3 --> p2p4
-p2p4 --> p2p2 : reformulate
-p2p4 --> p2p5 : validated
-p2p5 --> p2p2 : score < 0.75
+rectangle "Research Topic" as input #E2E8F0
+rectangle "LiteratureAgent\n<size:11>research findings</size>" as literature #FFEDD5
+rectangle "HypothesisAgent\n<size:11>formulate hypothesis</size>" as hypothesis #FFEDD5
+rectangle "CriticAgent\n<size:11>identify weaknesses</size>" as critic #FED7AA
+rectangle "ValidationAgent\n<size:11>validate or reformulate</size>" as validation #FED7AA
+rectangle "ScorerAgent\n<size:11>quality score</size>" as scorer #FFEDD5
+rectangle "Decision\n<size:11>score >= 0.75?</size>" as gate #FEF3C7
+rectangle "Validated Hypothesis" as output #DCFCE7
 
+input --> literature
+literature --> hypothesis
+hypothesis --> critic
+critic --> validation
+validation ..> hypothesis : reformulate
+hypothesis --> scorer
+scorer --> gate
+gate --> output : score >= 0.75
+gate ..> hypothesis : continue refining
+
+@enduml
 @enduml

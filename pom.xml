@@ -16,8 +16,9 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.version>3.30.6</quarkus.version>
-        <langchain4j.version>1.12.2</langchain4j.version>
-        <langchain4j.agentic.version>1.12.2-beta22</langchain4j.agentic.version>
+        <langchain4j.version>1.18.0</langchain4j.version>
+        <langchain4j.agentic.version>1.18.0-beta28</langchain4j.agentic.version>
+        <langchain4j.openai.version>1.14.0-beta24</langchain4j.openai.version>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
     </properties>
@@ -63,7 +64,7 @@
             <version>${langchain4j.agentic.version}</version>
         </dependency>
 
-        <!-- LangChain4j Agentic Patterns (GOAP, P2P) -->
+        <!-- LangChain4j Agentic Patterns (GOAP, P2P, Debate, Voting) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic-patterns</artifactId>
@@ -74,7 +75,7 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-official</artifactId>
-            <version>${langchain4j.agentic.version}</version>
+            <version>${langchain4j.openai.version}</version>
         </dependency>
 
         <!-- Azure Identity for Azure OpenAI authentication -->

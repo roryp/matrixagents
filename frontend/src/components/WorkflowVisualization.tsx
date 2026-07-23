@@ -29,19 +29,28 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 })
 
-  // Track active and completed agents from events
-  const activeAgents = new Set<string>()
+  // Mapper workers receive numeric suffixes (for example ReviewAnalyzer_0).
+  // Count normalized invocations so repeated and concurrent agents stay active until all complete.
+  const normalizeAgentName = (name: string) => name.replace(/_\d+$/, '')
+  const activeAgentCounts = new Map<string, number>()
   const completedAgents = new Set<string>()
   
   events.forEach(event => {
     if (event.eventType === 'AGENT_INVOKED' && event.agentName) {
-      activeAgents.add(event.agentName)
+      const agentName = normalizeAgentName(event.agentName)
+      activeAgentCounts.set(agentName, (activeAgentCounts.get(agentName) || 0) + 1)
     }
     if (event.eventType === 'AGENT_COMPLETED' && event.agentName) {
-      activeAgents.delete(event.agentName)
-      completedAgents.add(event.agentName)
+      const agentName = normalizeAgentName(event.agentName)
+      activeAgentCounts.set(agentName, Math.max(0, (activeAgentCounts.get(agentName) || 0) - 1))
+      completedAgents.add(agentName)
     }
   })
+  const activeAgents = new Set(
+    Array.from(activeAgentCounts.entries())
+      .filter(([, count]) => count > 0)
+      .map(([agentName]) => agentName)
+  )
 
   // Create tooltip element
   useEffect(() => {
@@ -90,10 +99,10 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
     let nodes: Node[] = pattern.agents.map((agent) => ({
       id: agent,
       label: agent,
-      status: completedAgents.has(agent) 
-        ? 'completed' 
-        : activeAgents.has(agent) 
-          ? 'active' 
+      status: activeAgents.has(agent)
+        ? 'active'
+        : completedAgents.has(agent)
+          ? 'completed'
           : 'idle'
     }))
 
@@ -510,17 +519,28 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
 
   // Handle resize
   useEffect(() => {
+    const container = svgRef.current?.parentElement
+    if (!container) return
+
     const handleResize = () => {
-      if (svgRef.current?.parentElement) {
+      const width = container.clientWidth
+      if (width > 0) {
         setDimensions({
-          width: svgRef.current.parentElement.clientWidth,
+          width,
           height: 400
         })
       }
     }
+
+    const resizeObserver = new ResizeObserver(handleResize)
+    resizeObserver.observe(container)
     handleResize()
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   return (

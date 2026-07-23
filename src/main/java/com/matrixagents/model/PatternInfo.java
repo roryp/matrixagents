@@ -98,10 +98,10 @@ public record PatternInfo(
             "Human-in-the-Loop",
             "Pauses workflow execution to request human input or approval before proceeding.",
             "agentic",
-            List.of("ProposalAgent", "Human", "ExecutionAgent"),
+            List.of("ZodiacExtractor", "Human", "HoroscopeAgent"),
             Map.of("type", "SEQUENCE", "hasHuman", true, "edges", List.of(
-                Map.of("from", "ProposalAgent", "to", "Human"),
-                Map.of("from", "Human", "to", "ExecutionAgent")
+                Map.of("from", "ZodiacExtractor", "to", "Human"),
+                Map.of("from", "Human", "to", "HoroscopeAgent")
             )),
             "Create a horoscope for me"
         );
@@ -143,16 +143,69 @@ public record PatternInfo(
         );
     }
 
+    public static PatternInfo parallelMapper() {
+        return new PatternInfo(
+            "parallel-mapper",
+            "Parallel Mapper (Map-Reduce)",
+            "Fans a single agent out over a collection, running one instance per item concurrently, then aggregates the results into a list. Perfect for batch processing like analyzing many reviews at once.",
+            "workflow",
+            List.of("ReviewAnalyzer"),
+            Map.of("type", "PARALLEL", "edges", List.of(
+                Map.of("from", "start", "to", "ReviewAnalyzer"),
+                Map.of("from", "ReviewAnalyzer", "to", "combiner")
+            )),
+            "The battery easily lasts two days and charges fast\nThe screen cracked after a single short drop\nGreat value for the price, would buy again\nSupport never responded to my emails\nSetup was confusing but it works well now"
+        );
+    }
+
+    public static PatternInfo debate() {
+        return new PatternInfo(
+            "debate",
+            "Debate",
+            "Debater agents argue a question from opposing viewpoints across parallel rounds, reading and refining against each other's reasoning, until they converge or a judge renders the final verdict.",
+            "planning",
+            List.of("Judge", "Proponent", "Skeptic", "Pragmatist"),
+            Map.of("type", "STAR", "edges", List.of(
+                Map.of("from", "Proponent", "to", "Judge"),
+                Map.of("from", "Skeptic", "to", "Judge"),
+                Map.of("from", "Pragmatist", "to", "Judge")
+            )),
+            "Should companies adopt a four-day work week?"
+        );
+    }
+
+    public static PatternInfo voting() {
+        return new PatternInfo(
+            "voting",
+            "Voting",
+            "An ensemble of independent analyst agents each vote on the same question in parallel, and a voting strategy aggregates the ballots into a single majority decision.",
+            "planning",
+            List.of("GrowthAnalyst", "ValueAnalyst", "RiskAnalyst"),
+            Map.of("type", "PARALLEL", "edges", List.of(
+                Map.of("from", "start", "to", "GrowthAnalyst"),
+                Map.of("from", "start", "to", "ValueAnalyst"),
+                Map.of("from", "start", "to", "RiskAnalyst"),
+                Map.of("from", "GrowthAnalyst", "to", "combiner"),
+                Map.of("from", "ValueAnalyst", "to", "combiner"),
+                Map.of("from", "RiskAnalyst", "to", "combiner")
+            )),
+            "Evaluate an investment in a fast-growing EV startup: revenue up 45% year-over-year, but heavy debt and no profits yet."
+        );
+    }
+
     public static List<PatternInfo> all() {
         return List.of(
             sequence(),
             parallel(),
+            parallelMapper(),
             loop(),
             conditional(),
             supervisor(),
             humanInLoop(),
             goap(),
-            p2p()
+            p2p(),
+            debate(),
+            voting()
         );
     }
 }

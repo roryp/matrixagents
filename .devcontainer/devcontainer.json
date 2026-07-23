@@ -1,0 +1,18 @@
+{
+  "name": "Matrix Agents",
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "pnpmVersion": "none"
+    }
+  },
+  "remoteEnv": {
+    "ENVIRONMENT": "development",
+    "NPM_CONFIG_REGISTRY": "https://packagefeedproxy.microsoft.io/npm/"
+  },
+  "mounts": [
+    "source=matrixagents-frontend-node-modules,target=${containerWorkspaceFolder}/frontend/node_modules,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
