@@ -1,12 +1,8 @@
 # Multi-stage build for Matrix Agents
 
-# Stage 1: Build frontend
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+# Stage 1: Collect the frontend built by the azd predeploy hook
+FROM scratch AS frontend-build
+COPY frontend/dist /app/frontend/dist
 
 # Stage 2: Build backend
 FROM maven:3.9-eclipse-temurin-21 AS backend-build

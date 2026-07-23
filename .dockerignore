@@ -1,0 +1,22 @@
+# Build outputs not needed in the image
+target/
+frontend/node_modules/
+
+# frontend/dist is intentionally included after the azd predeploy build.
+
+# azd + local secrets (must never enter the build context)
+.azure/
+.env
+.env.*
+*.env
+
+# VCS / IDE / tooling
+.git/
+.github/
+.vscode/
+.idea/
+.mvn/wrapper/maven-wrapper.jar
+
+# Test / capture artifacts
+.playwright-mcp/
+*.png

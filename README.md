@@ -98,11 +98,11 @@ In a multi-agent system, each agent has a **narrow focus** — one researches, o
 
 ### The Three Categories
 
-The 8 patterns in this showcase are organized into three tiers based on **who controls the orchestration**:
+The 11 patterns in this showcase are organized into three tiers based on **who controls the orchestration**:
 
-- **Workflow Patterns** — *you* define the rules in code. Agents follow a fixed path: sequential, parallel, looping, or branching. Predictable and easy to debug.
+- **Workflow Patterns** — *you* define the rules in code. Agents follow a fixed path: sequential, parallel, batch mapping, looping, or branching. Predictable and easy to debug.
 - **Agentic Patterns** — the *LLM* decides what happens next. A supervisor agent plans and delegates, or the system pauses for human judgment. More flexible, less predictable.
-- **Planning Patterns** — *algorithms* calculate the optimal execution plan. GOAP finds the shortest path through a dependency graph; P2P lets agents self-organize. Most autonomous, most powerful.
+- **Planning Patterns** — *algorithms* coordinate advanced execution. GOAP finds the shortest dependency path, P2P lets agents self-organize, Debate refines competing arguments, and Voting aggregates independent decisions.
 
 <img src="docs/agentic-patterns-overview.png" alt="The Three Categories of Agentic Patterns — Tier 1 Workflow Patterns (you define the rules): Sequential, Parallel, Loop, Conditional. Tier 2 Agentic Patterns (the LLM decides): Supervisor, Human-in-the-Loop. Tier 3 Planning Patterns (algorithms optimize): GOAP, P2P. Increasing autonomy from top to bottom." width="800"/>
 
@@ -149,7 +149,19 @@ These patterns follow **structured rules** - you define exactly how agents inter
 
 ---
 
-#### 3. Loop Workflow (Cycle)
+#### 3. Parallel Mapper (Map-Reduce)
+
+**What it does:** Creates one agent instance per input item, processes the collection concurrently, and returns the results in input order.
+
+**Real-world analogy:** A review team where every analyst applies the same rubric to a different customer review, then the findings are collected into one report.
+
+**When to use:** Large batches of independent items that need the same analysis or transformation.
+
+**Example prompt:** Paste multiple product reviews separated by new lines to classify their sentiment and extract each key point.
+
+---
+
+#### 4. Loop Workflow (Cycle)
 
 **What it does:** Agents iterate and refine until a quality threshold is met.
 
@@ -167,7 +179,7 @@ These patterns follow **structured rules** - you define exactly how agents inter
 
 ---
 
-#### 4. Conditional Routing (Branch)
+#### 5. Conditional Routing (Branch)
 
 **What it does:** Routes to different specialist agents based on the input.
 
@@ -188,7 +200,7 @@ These patterns follow **structured rules** - you define exactly how agents inter
 
 These patterns use **LLM intelligence** to decide how agents interact.
 
-#### 5. Supervisor Agent (Star)
+#### 6. Supervisor Agent (Star)
 
 **What it does:** A "boss" agent plans and delegates to worker agents.
 
@@ -207,7 +219,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 
 ---
 
-#### 6. Human-in-the-Loop (Gated)
+#### 7. Human-in-the-Loop (Gated)
 
 **What it does:** Pauses execution to get human input or approval.
 
@@ -230,7 +242,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 
 These patterns use **advanced planning algorithms** for complex orchestration.
 
-#### 7. GOAP - Goal-Oriented Action Planning (DAG)
+#### 8. GOAP - Goal-Oriented Action Planning (DAG)
 
 **What it does:** Finds the optimal sequence of agents to reach a goal, like GPS finding the shortest route. The planner builds a dependency graph from each agent's inputs and outputs, then calculates the shortest path from the current state to the goal.
 
@@ -277,7 +289,7 @@ The planner won't execute an agent until all its input keys are present in the `
 
 ---
 
-#### 8. P2P - Peer-to-Peer (Mesh)
+#### 9. P2P - Peer-to-Peer (Mesh)
 
 **What it does:** Agents collaborate as equals, reacting to each other's outputs without a central controller.
 
@@ -297,9 +309,29 @@ The planner won't execute an agent until all its input keys are present in the `
 
 ---
 
+#### 10. Debate (Multi-Round Panel)
+
+**What it does:** Runs opposing debaters in parallel rounds, sharing prior arguments so each can refine its position before a judge synthesizes the final verdict.
+
+**When to use:** Policy analysis, architecture tradeoffs, and decisions where surfacing strong counterarguments matters.
+
+**Example prompt:** *"Should companies adopt a four-day work week?"*
+
+---
+
+#### 11. Voting (Ensemble Decision)
+
+**What it does:** Collects independent categorical ballots in parallel and applies a voting strategy to produce one committee decision.
+
+**When to use:** Decisions that benefit from independent specialist perspectives and a transparent aggregation rule.
+
+**Example prompt:** *"Evaluate an investment in a fast-growing EV startup with heavy debt and no profits."*
+
+---
+
 ### Choosing the Right Pattern
 
-With 8 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
+With 11 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
 
 <img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — mapping situations to the recommended agentic pattern: Sequential for simple pipelines, Parallel for multiple perspectives, Loop for quality-critical tasks, Conditional for varied inputs, Supervisor for complex decomposition, Human-in-the-Loop for approval workflows, GOAP for dependency-heavy planning, and P2P for creative collaboration" width="800"/>
 
@@ -307,12 +339,15 @@ With 8 patterns available, picking the right one is the most important design de
 |-----------|---------------------|-----|
 | Simple pipeline with clear steps | **Sequential** | Each step depends on the previous — no branching or parallelism needed |
 | Need multiple perspectives fast | **Parallel** | Fan-out to independent experts, then combine — minimizes latency |
+| Apply one operation to many items | **Parallel Mapper** | Create one worker per item and preserve ordered batch results |
 | Quality is critical, time isn't | **Loop** | Iterative refinement with a critic ensures output meets a quality bar |
 | Different inputs need different handling | **Conditional** | Route to the right specialist based on input classification |
 | Complex task, unclear how to break down | **Supervisor** | Let the LLM decompose the task and delegate dynamically |
 | Need human approval or input | **Human-in-the-Loop** | Gate critical decisions behind human review before proceeding |
 | Many dependencies, need optimal path | **GOAP** | Builds a dependency graph from agent inputs/outputs and finds the shortest execution path |
 | Creative/brainstorming, want collaboration | **P2P** | Agents react to each other as equals — emergent collaboration |
+| Need competing arguments examined | **Debate** | Multi-round adversarial refinement exposes tradeoffs before a judge decides |
+| Need a robust categorical decision | **Voting** | Independent ballots reduce single-agent bias and aggregate transparently |
 
 > **Tip:** Start with the simplest pattern that fits. You can always compose patterns — for example, a Supervisor that delegates to a Loop sub-workflow, or a GOAP plan where individual steps run in Parallel.
 
@@ -322,7 +357,7 @@ With 8 patterns available, picking the right one is the most important design de
 
 ### AgenticScope: Unified State Management
 
-All 8 patterns in this showcase use **LangChain4j's `AgenticServices`** builders with `AgenticScope` for unified state management. The `AgenticScope` provides:
+All 11 patterns in this showcase use **LangChain4j's `AgenticServices`** builders with `AgenticScope` for unified state management. The `AgenticScope` provides:
 
 - **State sharing** between agents via `scope.readState()` / `scope.writeState()`
 - **Output key mapping** via `@Agent(outputKey = "result")` 
@@ -443,9 +478,10 @@ String hypothesis = scope.readState("hypothesis", "");
 ### Backend
 - **Java 21** with Virtual Threads
 - **Spring Boot 4.0.1** *(this branch)* — or **Quarkus 3.30.6** on the `quarkus` branch
-- **LangChain4j 1.10.0** (Core)
-- **LangChain4j Agentic 1.10.0-beta18** (Agent framework)
-- **LangChain4j OpenAI Official 1.10.0-beta18** (Azure OpenAI)
+- **LangChain4j 1.18.0** (Core)
+- **LangChain4j Agentic 1.18.0-beta28** (Agent framework)
+- **LangChain4j Agentic Patterns 1.18.0-beta28** (Advanced planners)
+- **LangChain4j OpenAI Official 1.14.0-beta24** (Azure OpenAI)
 - **STOMP over SockJS** *(this branch)* — or Native Quarkus WebSockets on `quarkus` branch
 
 ### Frontend
@@ -679,15 +715,15 @@ The application defaults to `gpt-5` for chat and `text-embedding-3-small` for em
 <details>
 <summary><strong>What's the difference between "Workflow" and "Agentic" patterns?</strong></summary>
 
-- **Workflow patterns** (Sequential, Parallel, Loop, Conditional) — you define exactly how agents interact in code.
+- **Workflow patterns** (Sequential, Parallel, Parallel Mapper, Loop, Conditional) — you define exactly how agents interact in code.
 - **Agentic patterns** (Supervisor, Human-in-the-Loop) — the LLM decides how to orchestrate agents at runtime.
-- **Planning patterns** (GOAP, P2P) use **specialized algorithms** to determine the optimal agent execution plan.
+- **Planning patterns** (GOAP, P2P, Debate, Voting) use **specialized algorithms** for dependency planning, decentralized collaboration, adversarial refinement, and ensemble decisions.
 </details>
 
 <details>
 <summary><strong>What is AgenticScope?</strong></summary>
 
-`AgenticScope` is LangChain4j's unified state management system. It provides shared state between agents (`readState`/`writeState`), output key mapping, agent invocation tracking, and real-time event publishing via `AgentListener`. All 8 patterns in this showcase use it.
+`AgenticScope` is LangChain4j's unified state management system. It provides shared state between agents (`readState`/`writeState`), output key mapping, agent invocation tracking, and real-time event publishing via `AgentListener`. All 11 patterns in this showcase use it.
 </details>
 
 <details>

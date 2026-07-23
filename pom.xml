@@ -40,21 +40,21 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.14.0</version>
+            <version>1.18.0</version>
         </dependency>
 
         <!-- LangChain4j Agentic Module - REAL AGENTS -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic</artifactId>
-            <version>1.14.0-beta24</version>
+            <version>1.18.0-beta28</version>
         </dependency>
 
-        <!-- LangChain4j Agentic Patterns (GOAP, P2P) -->
+        <!-- LangChain4j Agentic Patterns (GOAP, P2P, Debate, Voting, BDI, Blackboard) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-agentic-patterns</artifactId>
-            <version>1.14.0-beta24</version>
+            <version>1.18.0-beta28</version>
         </dependency>
 
         <!-- OpenAI Official SDK Provider (supports Azure OpenAI) -->

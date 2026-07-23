@@ -46,6 +46,24 @@ export const agentDescriptions: Record<string, Record<string, string>> = {
     CriticAgent: "Critiques hypotheses and identifies weaknesses or gaps. Provides adversarial review of propositions.",
     ValidationAgent: "Validates or reformulates hypotheses based on critique. Refines propositions for accuracy.",
     ScorerAgent: "Scores the quality of the final hypothesis from 0.0 to 1.0. Determines if the result meets quality standards."
+  },
+  "parallel-mapper": {
+    start: "Virtual entry point that fans the batch of items out to parallel worker instances.",
+    ReviewAnalyzer: "Analyzes a single customer review, classifying sentiment and extracting the key point. The mapper creates one instance of this agent per review and runs them all concurrently.",
+    combiner: "Virtual aggregation point that collects every worker's result into a single ordered list."
+  },
+  debate: {
+    Judge: "Impartial moderator and the last sub-agent. Reads the full debate history and synthesizes a balanced final verdict.",
+    Proponent: "Argues IN FAVOR of the proposition, emphasizing benefits and opportunities. Refines its stance each round after reading the other debaters.",
+    Skeptic: "Argues AGAINST the proposition, emphasizing risks, costs, and unintended consequences. Refines its stance each round.",
+    Pragmatist: "Argues from practical, real-world outcomes and feasibility. Refines its stance each round after weighing the other arguments."
+  },
+  voting: {
+    start: "Virtual entry point that dispatches the same proposal to every voter concurrently.",
+    GrowthAnalyst: "Votes BUY/HOLD/SELL from a growth and upside perspective. One independent ballot in the ensemble.",
+    ValueAnalyst: "Votes BUY/HOLD/SELL from a valuation and fundamentals perspective. One independent ballot in the ensemble.",
+    RiskAnalyst: "Votes BUY/HOLD/SELL from a risk-management perspective. One independent ballot in the ensemble.",
+    combiner: "Virtual aggregation point that tallies the ballots and applies the majority voting strategy."
   }
 };
 
