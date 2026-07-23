@@ -1,17 +1,28 @@
-@startuml goap
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-goap
+!include pattern-theme.puml
+skinparam linetype polyline
 
-title GOAP Pattern (DAG)
+title 8. Goal-Oriented Planning (GOAP)\n<size:14>The planner derives the shortest executable path from data dependencies</size>
 
-rectangle "Sign\nExtractor" as goap1 #Plum
-rectangle "Horoscope\nGenerator" as goap2 #Plum
-rectangle "Story\nFinder" as goap3 #Plum
-rectangle "Writer\nAgent" as goap4 #Plum
+left to right direction
 
-goap1 --> goap2
-goap1 --> goap3
-goap2 --> goap4
-goap3 --> goap4
+rectangle "Travel Request\n<size:11>prompt</size>" as input #E2E8F0
+rectangle "CityParser\n<size:11>prompt -> cities</size>" as city #FFEDD5
+rectangle "DistanceCalculator\n<size:11>cities -> distances</size>" as distance #FED7AA
+rectangle "AttractionFinder\n<size:11>cities -> attractions</size>" as attractions #FED7AA
+rectangle "RouteOptimizer\n<size:11>distances -> route</size>" as route #FFEDD5
+rectangle "ItineraryPlanner\n<size:11>route + attractions -> itinerary</size>" as itinerary #FFEDD5
+rectangle "Travel Itinerary\n<size:11>goal</size>" as output #DCFCE7
 
+input --> city
+city --> distance
+city --> attractions
+distance --> route
+route --> itinerary
+attractions --> itinerary
+itinerary --> output
+
+distance -[hidden]down-> attractions
+
+@enduml
 @enduml

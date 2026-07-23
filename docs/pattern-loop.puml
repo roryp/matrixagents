@@ -1,16 +1,28 @@
-@startuml loop
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-loop
+!include pattern-theme.puml
+skinparam linetype polyline
 
-title Loop Pattern (Cycle)
+title 4. Loop Workflow\n<size:14>Score and refine until quality reaches 0.8 or five iterations complete</size>
 
-rectangle "Creative\nWriter" as loop1 #LightYellow
-rectangle "Style\nScorer" as loop2 #LightYellow
-rectangle "Style\nEditor" as loop3 #LightYellow
+left to right direction
 
-loop1 --> loop2 : generate
-loop2 --> loop3 : score < 0.8
-loop3 --> loop2 : refine
-loop2 -[#green]-> loop1 : score >= 0.8\n(exit)
+rectangle "Request\n<size:11>topic + style</size>" as input #E2E8F0
+rectangle "CreativeWriter\n<size:11>creates initial story</size>" as writer #DBEAFE
+rectangle "StyleScorer\n<size:11>returns score</size>" as scorer #DBEAFE
+rectangle "Decision\n<size:11>score >= 0.8?</size>" as gate #FEF3C7
+rectangle "StyleEditor\n<size:11>refines story</size>" as editor #DBEAFE
+rectangle "Final Story" as output #DCFCE7
 
+input --> writer
+writer --> scorer : story
+scorer --> gate : score
+gate --> output : yes
+gate -up-> editor : no - refine
+editor -left-> scorer : revised story
+
+note top of editor
+	Repeat at most 5 times
+end note
+
+@enduml
 @enduml

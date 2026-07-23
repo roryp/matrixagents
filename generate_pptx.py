@@ -81,10 +81,10 @@ add_textbox(slide, Inches(1), Inches(3.2), Inches(11), Inches(1),
             "LangChain4j Agentic Patterns Showcase", font_size=28,
             color=TEXT_COLOR, alignment=PP_ALIGN.CENTER)
 add_textbox(slide, Inches(1), Inches(4.2), Inches(11), Inches(0.8),
-            "8 agentic patterns with real-time visualization using D3.js and WebSocket streaming",
+            "11 agentic patterns with real-time visualization using D3.js and WebSocket streaming",
             font_size=16, color=SUBTITLE_COLOR, alignment=PP_ALIGN.CENTER)
 add_textbox(slide, Inches(1), Inches(5.8), Inches(11), Inches(0.6),
-            "Spring Boot 4.0  •  LangChain4j 1.10  •  React 18  •  D3.js  •  Azure OpenAI",
+            "Spring Boot 4.0  •  LangChain4j 1.18  •  React 18  •  D3.js  •  Azure OpenAI",
             font_size=14, color=SUBTITLE_COLOR, alignment=PP_ALIGN.CENTER)
 
 # ── Slide 2: Screenshot ─────────────────────────────────────────
@@ -107,7 +107,7 @@ add_image_centered(slide, os.path.join(DOCS, "architecture.png"), Inches(1.3))
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 set_slide_bg(slide)
 add_textbox(slide, Inches(0.5), Inches(0.3), Inches(12), Inches(0.8),
-            "8 Agentic Patterns Overview", font_size=36, color=TITLE_COLOR, bold=True,
+            "11 Agentic Patterns Overview", font_size=36, color=TITLE_COLOR, bold=True,
             alignment=PP_ALIGN.CENTER)
 add_image_centered(slide, os.path.join(DOCS, "patterns-overview.png"), Inches(1.3))
 
@@ -136,7 +136,18 @@ patterns = [
         ],
     },
     {
-        "title": "3. Loop Workflow",
+        "title": "3. Parallel Mapper",
+        "subtitle": "Concurrent Map-Reduce",
+        "image": "pattern-parallel-mapper.png",
+        "bullets": [
+            "Creates one worker instance per collection item",
+            "Processes the full batch concurrently while preserving order",
+            "Example: Review batch → ReviewAnalyzer workers → Report",
+            "API: AgenticServices.parallelMapperBuilder()",
+        ],
+    },
+    {
+        "title": "4. Loop Workflow",
         "subtitle": "Cycle Orchestration",
         "image": "pattern-loop.png",
         "bullets": [
@@ -147,7 +158,7 @@ patterns = [
         ],
     },
     {
-        "title": "4. Conditional Routing",
+        "title": "5. Conditional Routing",
         "subtitle": "Branch Orchestration",
         "image": "pattern-conditional.png",
         "bullets": [
@@ -158,7 +169,7 @@ patterns = [
         ],
     },
     {
-        "title": "5. Supervisor Agent",
+        "title": "6. Supervisor Agent",
         "subtitle": "Star Orchestration",
         "image": "pattern-supervisor.png",
         "bullets": [
@@ -169,7 +180,7 @@ patterns = [
         ],
     },
     {
-        "title": "6. Human-in-the-Loop",
+        "title": "7. Human-in-the-Loop",
         "subtitle": "Gated Orchestration",
         "image": "pattern-humaninloop.png",
         "bullets": [
@@ -180,18 +191,18 @@ patterns = [
         ],
     },
     {
-        "title": "7. GOAP — Goal-Oriented Action Planning",
+        "title": "8. GOAP — Goal-Oriented Action Planning",
         "subtitle": "DAG — Custom Planner",
         "image": "pattern-goap.png",
         "bullets": [
             "Finds optimal sequence of agents to reach a goal",
             "Like GPS finding the shortest route",
-            "Example: SignExtractor → (Horoscope + StoryFinder) → Writer",
+            "Example: CityParser → (Distances + Attractions) → Itinerary",
             "API: plannerBuilder() + GoalOrientedPlanner",
         ],
     },
     {
-        "title": "8. P2P — Peer-to-Peer",
+        "title": "9. P2P — Peer-to-Peer",
         "subtitle": "Mesh — Custom Planner",
         "image": "pattern-p2p.png",
         "bullets": [
@@ -199,6 +210,28 @@ patterns = [
             "Emergent collaboration for research & brainstorming",
             "Example: Literature → Hypothesis → Critic → Validation → Scorer",
             "API: plannerBuilder() + P2PPlanner (threshold ≥ 0.75)",
+        ],
+    },
+    {
+        "title": "10. Debate",
+        "subtitle": "Multi-Round Panel — Custom Planner",
+        "image": "pattern-debate.png",
+        "bullets": [
+            "Opposing perspectives refine arguments in parallel rounds",
+            "Shared debate context lets agents respond to prior positions",
+            "Example: Proponent + Skeptic + Pragmatist → Judge",
+            "API: plannerBuilder() + DebatePlanner",
+        ],
+    },
+    {
+        "title": "11. Voting",
+        "subtitle": "Ensemble Decision — Custom Planner",
+        "image": "pattern-voting.png",
+        "bullets": [
+            "Independent specialists cast comparable categorical ballots",
+            "A voting strategy aggregates one collective decision",
+            "Example: Growth + Value + Risk analysts → Majority",
+            "API: plannerBuilder() + VotingPlanner",
         ],
     },
 ]
@@ -214,12 +247,7 @@ for pat in patterns:
     add_textbox(slide, Inches(0.6), Inches(0.9), Inches(12), Inches(0.5),
                 pat["subtitle"], font_size=16, color=SUBTITLE_COLOR)
 
-    # Bullets on the left
-    bullet_text = "\n".join(f"•  {b}" for b in pat["bullets"])
-    add_textbox(slide, Inches(0.6), Inches(1.6), Inches(5.2), Inches(3.5),
-                bullet_text, font_size=15, color=TEXT_COLOR)
-
-    # Image on the right
+    # Use the full slide width for topology diagrams so edge labels remain legible.
     img_path = os.path.join(DOCS, pat["image"])
     if os.path.exists(img_path):
         from PIL import Image
@@ -228,14 +256,22 @@ for pat in patterns:
         dpi = 96
         emu_w = int(img_w / dpi * 914400)
         emu_h = int(img_h / dpi * 914400)
-        max_w = Inches(6.8)
-        max_h = Inches(5.2)
-        scale = min(max_w / emu_w, max_h / emu_h, 1.0)
+        max_w = Inches(12.1)
+        max_h = Inches(3.7)
+        scale = min(max_w / emu_w, max_h / emu_h)
         final_w = int(emu_w * scale)
         final_h = int(emu_h * scale)
-        left = Inches(6.2)
-        top = Inches(1.5)
+        left = int((SLIDE_W - final_w) / 2)
+        top = Inches(1.35) + int((max_h - final_h) / 2)
         slide.shapes.add_picture(img_path, left, top, final_w, final_h)
+
+        # Keep supporting points in two compact columns below the diagram.
+        left_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][:2])
+        right_bullets = "\n".join(f"•  {b}" for b in pat["bullets"][2:])
+        add_textbox(slide, Inches(0.7), Inches(5.35), Inches(5.9), Inches(1.5),
+            left_bullets, font_size=13, color=TEXT_COLOR)
+        add_textbox(slide, Inches(6.75), Inches(5.35), Inches(5.9), Inches(1.5),
+            right_bullets, font_size=13, color=TEXT_COLOR)
 
 # ── Slide: Choosing the Right Pattern ───────────────────────────
 slide = prs.slides.add_slide(prs.slide_layouts[6])
@@ -248,18 +284,21 @@ table_data = [
     ("Situation", "Recommended Pattern"),
     ("Simple pipeline with clear steps", "Sequential"),
     ("Need multiple perspectives fast", "Parallel"),
+    ("Apply one operation to many items", "Parallel Mapper"),
     ("Quality is critical, time isn't", "Loop"),
     ("Different inputs need different handling", "Conditional"),
     ("Complex task, unclear how to break down", "Supervisor"),
     ("Need human approval or input", "Human-in-the-Loop"),
     ("Many dependencies, need optimal path", "GOAP"),
     ("Creative / brainstorming collaboration", "P2P"),
+    ("Need competing arguments examined", "Debate"),
+    ("Need a robust categorical decision", "Voting"),
 ]
 
 rows = len(table_data)
 cols = 2
 tbl_w = Inches(10)
-tbl_h = Inches(4.5)
+tbl_h = Inches(5.4)
 left = int((SLIDE_W - tbl_w) / 2)
 top = Inches(1.5)
 table_shape = slide.shapes.add_table(rows, cols, left, top, tbl_w, tbl_h)
@@ -272,7 +311,7 @@ for r, (col0, col1) in enumerate(table_data):
         cell = table.cell(r, c)
         cell.text = val
         p = cell.text_frame.paragraphs[0]
-        p.font.size = Pt(14)
+        p.font.size = Pt(12)
         p.font.name = "Segoe UI"
         if r == 0:
             p.font.bold = True
@@ -295,8 +334,9 @@ backend_text = (
     "Backend\n\n"
     "•  Java 21 with Virtual Threads\n"
     "•  Spring Boot 4.0\n"
-    "•  LangChain4j 1.10.0 (Core)\n"
-    "•  LangChain4j Agentic 1.10.0-beta18\n"
+    "•  LangChain4j 1.18.0 (Core)\n"
+    "•  LangChain4j Agentic 1.18.0-beta28\n"
+    "•  Agentic Patterns 1.18.0-beta28\n"
     "•  Azure OpenAI integration\n"
     "•  STOMP over SockJS WebSockets"
 )
@@ -322,7 +362,7 @@ add_textbox(slide, Inches(0.5), Inches(0.3), Inches(12), Inches(0.8),
             bold=True, alignment=PP_ALIGN.CENTER)
 
 scope_text = (
-    "All 8 patterns use LangChain4j's AgenticServices builders with AgenticScope\n\n"
+    "All 11 patterns use LangChain4j's AgenticServices builders with AgenticScope\n\n"
     "•  State sharing between agents via scope.readState() / scope.writeState()\n"
     "•  Output key mapping via @Agent(outputKey = \"result\")\n"
     "•  Agent invocation tracking for debugging\n"

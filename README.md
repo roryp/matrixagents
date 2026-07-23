@@ -1,6 +1,6 @@
 # AI Agents - LangChain4j Agentic Patterns Showcase
 
-A showcase application demonstrating **8 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.
+A showcase application demonstrating **11 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
@@ -28,7 +28,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Features
 
-- **8 Agentic Patterns** with interactive visualizations
+- **11 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
 - **D3.js** animated topology graphs with agent tooltips (hover to see each agent's role)
 - **Event log** with timestamped agent activities and scope state inspector
@@ -37,13 +37,16 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Patterns Demonstrated
 
-<img src="docs/patterns-overview.png" alt="All 8 Agentic Patterns Overview — Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, and P2P" width="800"/>
+<img src="docs/patterns-overview.png" alt="All 11 Agentic Patterns Overview — Sequential, Parallel, Parallel Mapper, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, P2P, Debate, and Voting" width="800"/>
+
+All pattern visualizations are rendered from the matching [PlantUML sources](docs/) so the diagrams stay reviewable alongside the implementation.
 
 ### Workflow Patterns
 | Pattern | Description | Topology |
 |---------|-------------|----------|
 | **Sequential** | Agents invoked one after another in order | Chain |
 | **Parallel** | Multiple agents run simultaneously | Fan-out |
+| **Parallel Mapper** | One concurrent worker instance per collection item | Map-reduce |
 | **Loop** | Iterative refinement until exit condition | Cycle |
 | **Conditional** | Routes to different agents based on conditions | Branch |
 
@@ -58,6 +61,8 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 |---------|-------------|----------|
 | **GOAP** | Travelling Salesman via Goal-Oriented Action Planning | DAG |
 | **P2P** | Peer-to-peer decentralized coordination | Mesh |
+| **Debate** | Opposing perspectives refine arguments across rounds | Panel |
+| **Voting** | Independent specialist ballots produce a majority decision | Ensemble |
 
 ## Beginner's Guide to Agentic Patterns
 
@@ -104,7 +109,7 @@ The 11 patterns in this showcase are organized into three tiers based on **who c
 - **Agentic Patterns** — the *LLM* decides what happens next. A supervisor agent plans and delegates, or the system pauses for human judgment. More flexible, less predictable.
 - **Planning Patterns** — *algorithms* coordinate advanced execution. GOAP finds the shortest dependency path, P2P lets agents self-organize, Debate refines competing arguments, and Voting aggregates independent decisions.
 
-<img src="docs/agentic-patterns-overview.png" alt="The Three Categories of Agentic Patterns — Tier 1 Workflow Patterns (you define the rules): Sequential, Parallel, Loop, Conditional. Tier 2 Agentic Patterns (the LLM decides): Supervisor, Human-in-the-Loop. Tier 3 Planning Patterns (algorithms optimize): GOAP, P2P. Increasing autonomy from top to bottom." width="800"/>
+<img src="docs/agentic-patterns-overview.png" alt="The Three Categories of Agentic Patterns — Tier 1 Workflow: Sequential, Parallel, Parallel Mapper, Loop, and Conditional. Tier 2 Agentic: Supervisor and Human-in-the-Loop. Tier 3 Planning: GOAP, P2P, Debate, and Voting. Autonomy and coordination complexity increase across the tiers." width="800"/>
 
 As you move down from Workflow to Planning, agents gain **increasing autonomy** — but also increasing complexity. Start at the top. Most real-world problems are solved with Sequential or Parallel. Only reach for Supervisor or GOAP when the simpler patterns genuinely can't handle it.
 
@@ -158,6 +163,8 @@ These patterns follow **structured rules** - you define exactly how agents inter
 **When to use:** Large batches of independent items that need the same analysis or transformation.
 
 **Example prompt:** Paste multiple product reviews separated by new lines to classify their sentiment and extract each key point.
+
+<img src="docs/pattern-parallel-mapper.png" alt="Parallel Mapper Pattern — a batch of reviews fans out to one concurrent ReviewAnalyzer worker per item, then ordered analyses are aggregated into a batch report." width="800"/>
 
 ---
 
@@ -317,6 +324,8 @@ The planner won't execute an agent until all its input keys are present in the `
 
 **Example prompt:** *"Should companies adopt a four-day work week?"*
 
+<img src="docs/pattern-debate.png" alt="Debate Pattern — Proponent, Skeptic, and Pragmatist argue in parallel rounds using shared debate context until convergence or round three, then Judge synthesizes the final verdict." width="800"/>
+
 ---
 
 #### 11. Voting (Ensemble Decision)
@@ -327,13 +336,15 @@ The planner won't execute an agent until all its input keys are present in the `
 
 **Example prompt:** *"Evaluate an investment in a fast-growing EV startup with heavy debt and no profits."*
 
+<img src="docs/pattern-voting.png" alt="Voting Pattern — GrowthAnalyst, ValueAnalyst, and RiskAnalyst cast independent BUY, HOLD, or SELL ballots that a majority strategy aggregates into one committee decision." width="800"/>
+
 ---
 
 ### Choosing the Right Pattern
 
 With 11 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
 
-<img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — mapping situations to the recommended agentic pattern: Sequential for simple pipelines, Parallel for multiple perspectives, Loop for quality-critical tasks, Conditional for varied inputs, Supervisor for complex decomposition, Human-in-the-Loop for approval workflows, GOAP for dependency-heavy planning, and P2P for creative collaboration" width="800"/>
+<img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — maps common orchestration situations to all 11 patterns: Sequential, Parallel, Parallel Mapper, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, P2P, Debate, and Voting." width="800"/>
 
 | Situation | Recommended Pattern | Why |
 |-----------|---------------------|-----|
@@ -500,7 +511,7 @@ Getting up and running with the LangChain4j Agentic module takes just **4 steps*
 1. **Add Dependencies** — Add `langchain4j-agentic` to your `pom.xml` or `build.gradle`. This module provides the agent builders, `AgenticScope`, and pattern orchestration APIs.
 2. **Configure Your LLM** — Configure your LLM provider. For example, with Azure OpenAI set `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and `AZURE_OPENAI_DEPLOYMENT` as environment variables (or in a `.env` file). These connect your agents to the LLM backend.
 3. **Define Your Agents** — Create agent instances with roles, goals, and tools using the `Agent` builder pattern. Each agent is a specialist with a focused responsibility.
-4. **Choose a Pattern** — Wire your agents into one of the 8 supported patterns (Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, or P2P) using `AgenticServices` builders.
+4. **Choose a Pattern** — Wire your agents into one of the 11 supported patterns (Sequential, Parallel, Parallel Mapper, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, P2P, Debate, or Voting) using `AgenticServices` builders and planners.
 
 ---
 
@@ -641,7 +652,10 @@ matrixagents/
 │   │   ├── SupervisorAgents.java
 │   │   ├── HumanInLoopAgents.java
 │   │   ├── GOAPAgents.java
-│   │   └── P2PAgents.java
+│   │   ├── P2PAgents.java
+│   │   ├── ParallelMapperAgents.java
+│   │   ├── DebateAgents.java
+│   │   └── VotingAgents.java
 │   ├── config/
 │   │   ├── CorsConfig.java             # CORS configuration
 │   │   ├── LangChainConfig.java        # LLM configuration
@@ -689,9 +703,9 @@ This is a **showcase/demo application**, not a production system. It's designed 
 <details>
 <summary><strong>What's the difference between the `main` and `quarkus` branches?</strong></summary>
 
-Both branches implement the same 8 agentic patterns with identical functionality. The difference is the backend framework:
-- **`main`** — Spring Boot 4.0.1 with STOMP/SockJS WebSockets
-- **`quarkus`** — Quarkus 3.30.6 with native Quarkus WebSockets
+The branches share the same application structure but currently demonstrate different pattern sets:
+- **`main`** — Spring Boot 4.0.1 with STOMP/SockJS WebSockets and all 11 patterns
+- **`quarkus`** — Quarkus 3.30.6 with native Quarkus WebSockets and the original 8 patterns
 
 The frontend, agent logic, and LangChain4j code are the same across both branches.
 </details>

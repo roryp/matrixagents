@@ -1,0 +1,52 @@
+@startuml agentic-patterns-overview
+!include pattern-theme.puml
+
+title The Three Categories of Agentic Patterns\n<size:14>Control moves from deterministic application code to autonomous planners</size>
+
+top to bottom direction
+
+package "TIER 1 - WORKFLOW\n<size:12>You define the rules | predictable execution</size>" #EFF6FF {
+    rectangle "Application Code" as code #BFDBFE
+    rectangle "Sequential" as sequential #DBEAFE
+    rectangle "Parallel" as parallel #DBEAFE
+    rectangle "Parallel Mapper" as mapper #DBEAFE
+    rectangle "Loop" as loop #DBEAFE
+    rectangle "Conditional" as conditional #DBEAFE
+
+    code --> sequential
+    code --> parallel
+    code --> mapper
+    code --> loop
+    code --> conditional
+}
+
+package "TIER 2 - AGENTIC\n<size:12>Runtime judgment changes the path</size>" #FAF5FF {
+    rectangle "LLM / Human Judgment" as judgment #E9D5FF
+    rectangle "Supervisor" as supervisor #F3E8FF
+    rectangle "Human-in-the-Loop" as human #F3E8FF
+
+    judgment --> supervisor
+    judgment --> human
+}
+
+package "TIER 3 - PLANNING\n<size:12>Algorithms optimize or aggregate coordination</size>" #FFF7ED {
+    rectangle "Planner Algorithm" as planner #FED7AA
+    rectangle "GOAP" as goap #FFEDD5
+    rectangle "P2P" as p2p #FFEDD5
+    rectangle "Debate" as debate #FFEDD5
+    rectangle "Voting" as voting #FFEDD5
+
+    planner --> goap
+    planner --> p2p
+    planner --> debate
+    planner --> voting
+}
+
+code -[hidden]down-> judgment
+judgment -[hidden]down-> planner
+
+legend bottom
+  <b>Increasing autonomy and coordination complexity</b> from Tier 1 to Tier 3
+endlegend
+
+@enduml

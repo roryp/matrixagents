@@ -1,16 +1,26 @@
-@startuml supervisor
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-supervisor
+!include pattern-theme.puml
+skinparam linetype polyline
 
-title Supervisor Pattern (Star)
+title 6. Supervisor Agent\n<size:14>An LLM plans the work, delegates tasks, and synthesizes the response</size>
 
-rectangle "Bank\nSupervisor" as sup #Thistle
-rectangle "Withdraw\nTool" as sup1 #Thistle
-rectangle "Credit\nTool" as sup2 #Thistle
-rectangle "Exchange\nTool" as sup3 #Thistle
+left to right direction
 
-sup --> sup1
-sup --> sup2
-sup --> sup3
+rectangle "Banking Request" as input #E2E8F0
+rectangle "BankSupervisor\n<size:11>plan + orchestrate</size>" as supervisor #F3E8FF
+rectangle "WithdrawAgent" as withdraw #EDE9FE
+rectangle "CreditAgent" as credit #EDE9FE
+rectangle "ExchangeAgent" as exchange #EDE9FE
+rectangle "Completed Request" as output #DCFCE7
 
+input --> supervisor
+supervisor <--> withdraw : task / result
+supervisor <--> credit : task / result
+supervisor <--> exchange : task / result
+supervisor --> output : synthesize
+
+withdraw -[hidden]down-> credit
+credit -[hidden]down-> exchange
+
+@enduml
 @enduml

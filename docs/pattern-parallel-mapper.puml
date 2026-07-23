@@ -1,0 +1,28 @@
+@startuml pattern-parallel-mapper
+!include pattern-theme.puml
+
+title 3. Parallel Mapper (Map-Reduce)\n<size:14>One ReviewAnalyzer instance is created for every input item</size>
+
+left to right direction
+
+rectangle "Review Batch\n<size:11>reviews[0..n]</size>" as batch #E2E8F0
+rectangle "Parallel Mapper\n<size:11>fan out by item</size>" as mapper #FEF3C7
+rectangle "ReviewAnalyzer\n<size:11>worker 1</size>" as worker1 #DBEAFE
+rectangle "ReviewAnalyzer\n<size:11>worker 2</size>" as worker2 #DBEAFE
+rectangle "ReviewAnalyzer\n<size:11>worker n</size>" as workern #DBEAFE
+rectangle "Ordered Analyses\n<size:11>preserve input order</size>" as aggregate #FEF3C7
+rectangle "Batch Report" as output #DCFCE7
+
+batch --> mapper
+mapper --> worker1 : review 1
+mapper --> worker2 : review 2
+mapper --> workern : review n
+worker1 --> aggregate : analysis 1
+worker2 --> aggregate : analysis 2
+workern --> aggregate : analysis n
+aggregate --> output
+
+worker1 -[hidden]down-> worker2
+worker2 -[hidden]down-> workern
+
+@enduml

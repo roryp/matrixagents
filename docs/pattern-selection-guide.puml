@@ -1,0 +1,21 @@
+@startuml pattern-selection-guide
+!include pattern-theme.puml
+
+title Pattern Selection Guide\n<size:14>Start with the simplest orchestration model that matches the problem</size>
+
+note as guide #FFFFFF
+|= Situation |= Recommended pattern |= Coordination model |
+| Fixed stages with dependent outputs | **Sequential** | Ordered chain |
+| Several independent perspectives | **Parallel** | Fan-out / fan-in |
+| Same operation over many items | **Parallel Mapper** | Concurrent map-reduce |
+| Quality requires repeated refinement | **Loop** | Exit-condition cycle |
+| Input determines the specialist | **Conditional** | Runtime branch |
+| Task decomposition is not known upfront | **Supervisor** | LLM planning + delegation |
+| Approval or missing context needs a person | **Human-in-the-Loop** | Human gate |
+| Goal has data dependencies | **GOAP** | Shortest dependency path |
+| Peers should react to shared state | **P2P** | Decentralized collaboration |
+| Strong opposing arguments matter | **Debate** | Multi-round adversarial panel |
+| Independent categorical judgments matter | **Voting** | Ensemble majority |
+end note
+
+@enduml

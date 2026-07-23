@@ -1,16 +1,27 @@
-@startuml conditional
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-conditional
+!include pattern-theme.puml
 
-title Conditional Pattern (Branch)
+title 5. Conditional Routing\n<size:14>The router selects exactly one specialist at runtime</size>
 
-rectangle "Category\nRouter" as cond_r #LightCoral
-rectangle "Medical\nExpert" as cond1 #LightCoral
-rectangle "Legal\nExpert" as cond2 #LightCoral
-rectangle "Technical\nExpert" as cond3 #LightCoral
+left to right direction
 
-cond_r --> cond1 : MEDICAL
-cond_r --> cond2 : LEGAL
-cond_r --> cond3 : TECHNICAL
+rectangle "User Request" as input #E2E8F0
+rectangle "CategoryRouter\n<size:11>classifies request</size>" as router #DBEAFE
+rectangle "MedicalExpert" as medical #DBEAFE
+rectangle "LegalExpert" as legal #DBEAFE
+rectangle "TechnicalExpert" as technical #DBEAFE
+rectangle "Specialist Response" as output #DCFCE7
 
+input --> router : request
+router --> medical : MEDICAL
+router --> legal : LEGAL
+router --> technical : TECHNICAL
+medical --> output : response
+legal --> output : response
+technical --> output : response
+
+medical -[hidden]down-> legal
+legal -[hidden]down-> technical
+
+@enduml
 @enduml

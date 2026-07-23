@@ -1,0 +1,31 @@
+!theme plain
+skinparam backgroundColor #F8FAFC
+skinparam shadowing false
+skinparam roundCorner 14
+skinparam defaultFontName Arial
+skinparam defaultFontColor #0F172A
+skinparam defaultFontSize 14
+skinparam titleFontName Arial
+skinparam titleFontSize 24
+skinparam titleFontStyle bold
+skinparam titleFontColor #0F172A
+skinparam ArrowColor #475569
+skinparam ArrowFontColor #334155
+skinparam ArrowFontSize 12
+skinparam rectangleBorderColor #334155
+skinparam rectangleFontColor #0F172A
+skinparam rectangleFontSize 14
+skinparam packageBorderColor #94A3B8
+skinparam packageFontColor #0F172A
+skinparam packageFontStyle bold
+skinparam packageBackgroundColor #FFFFFF
+skinparam noteBackgroundColor #FFF7ED
+skinparam noteBorderColor #FDBA74
+skinparam noteFontColor #7C2D12
+skinparam legendBackgroundColor #FFFFFF
+skinparam legendBorderColor #94A3B8
+skinparam legendFontColor #0F172A
+skinparam legendFontSize 13
+skinparam linetype ortho
+
+hide stereotype
