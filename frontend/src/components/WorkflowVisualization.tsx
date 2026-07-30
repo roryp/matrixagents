@@ -30,18 +30,32 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
   const [dimensions, setDimensions] = useState({ width: 800, height: 400 })
 
   // Track active and completed agents from events
-  const activeAgents = new Set<string>()
+  // The parallel mapper clones its agent per item (ReviewAnalyzer_0, _1, ...), so fold clones onto one node.
+  const normalizeAgentName = (name: string) => name.replace(/_\d+$/, '')
+
+  const activeAgentCounts = new Map<string, number>()
   const completedAgents = new Set<string>()
-  
+
   events.forEach(event => {
-    if (event.eventType === 'AGENT_INVOKED' && event.agentName) {
-      activeAgents.add(event.agentName)
+    if (!event.agentName) return
+    const agent = normalizeAgentName(event.agentName)
+
+    if (event.eventType === 'AGENT_INVOKED') {
+      activeAgentCounts.set(agent, (activeAgentCounts.get(agent) ?? 0) + 1)
+      completedAgents.delete(agent)
     }
-    if (event.eventType === 'AGENT_COMPLETED' && event.agentName) {
-      activeAgents.delete(event.agentName)
-      completedAgents.add(event.agentName)
+    if (event.eventType === 'AGENT_COMPLETED') {
+      const remaining = (activeAgentCounts.get(agent) ?? 0) - 1
+      if (remaining > 0) {
+        activeAgentCounts.set(agent, remaining)
+      } else {
+        activeAgentCounts.delete(agent)
+        completedAgents.add(agent)
+      }
     }
   })
+
+  const activeAgents = new Set(activeAgentCounts.keys())
 
   // Create tooltip element
   useEffect(() => {
@@ -510,17 +524,26 @@ export default function WorkflowVisualization({ pattern, events, isExecuting }: 
 
   // Handle resize
   useEffect(() => {
+    const container = svgRef.current?.parentElement
+    if (!container) return
+
     const handleResize = () => {
-      if (svgRef.current?.parentElement) {
-        setDimensions({
-          width: svgRef.current.parentElement.clientWidth,
-          height: 400
-        })
+      const width = container.clientWidth
+      if (width > 0) {
+        setDimensions({ width, height: 400 })
       }
     }
+
     handleResize()
+    // Route transitions can mount the SVG at zero width, which a window listener alone never corrects.
+    const resizeObserver = new ResizeObserver(handleResize)
+    resizeObserver.observe(container)
     window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
   return (

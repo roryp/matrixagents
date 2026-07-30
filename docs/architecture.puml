@@ -1,32 +1,22 @@
 @startuml architecture
-!theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle uml2
+!include pattern-theme.puml
+skinparam componentStyle rectangle
 
-title AI Agents - Azure Architecture
+title Azure Deployment Architecture\n<size:14>Quarkus application packaged with the React frontend in one container</size>
 
-package "Azure Resource Group" {
-    
-    component "Container Registry" as acr {
-    }
-    
-    package "Container Apps Environment" {
-        component "AI Agents App\n(Java 21 + React)" as app
-    }
-    
-    component "Azure OpenAI" as openai {
-        component "gpt-5-mini" as gpt
-        component "text-embedding-3-small" as embed
-    }
-    
-    package "Monitoring" {
-        component "Log Analytics" as logs
-        component "Application Insights" as insights
-    }
+top to bottom direction
+
+package "Azure Resource Group" #EFF6FF {
+    rectangle "Azure Container Registry\n<size:11>application image</size>" as acr #DBEAFE
+    rectangle "Azure Container Apps\n<size:11>Quarkus 3.30 + Java 21 + React</size>" as app #DCFCE7
+    rectangle "Azure OpenAI\n<size:11>gpt-5-mini + text-embedding-3-small</size>" as openai #FFEDD5
+    rectangle "Azure Monitor\n<size:11>Application Insights + Log Analytics</size>" as monitor #F3E8FF
+
+    acr --> app : deploy image
+    app --> openai : model API calls
+    app --> monitor : telemetry
+
+    openai -[hidden]right-> monitor
 }
-
-acr --> app : deploy
-app --> openai : API calls
-app --> insights : telemetry
 
 @enduml

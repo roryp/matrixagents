@@ -1,0 +1,26 @@
+@startuml pattern-voting
+!include pattern-theme.puml
+
+title 11. Voting\n<size:14>Independent specialist ballots are aggregated by majority vote</size>
+
+top to bottom direction
+
+rectangle "Investment Proposal" as input #E2E8F0
+rectangle "GrowthAnalyst\n<size:11>upside + momentum</size>" as growth #FFEDD5
+rectangle "ValueAnalyst\n<size:11>fundamentals + valuation</size>" as value #FFEDD5
+rectangle "RiskAnalyst\n<size:11>debt + downside</size>" as risk #FFEDD5
+rectangle "Majority Strategy\n<size:11>BUY / HOLD / SELL</size>" as majority #FEF3C7
+rectangle "Committee Decision" as output #DCFCE7
+
+input --> growth : proposal
+input --> value : proposal
+input --> risk : proposal
+growth --> majority : voteGrowth
+value --> majority : voteValue
+risk --> majority : voteRisk
+majority --> output : decision
+
+growth -[hidden]right-> value
+value -[hidden]right-> risk
+
+@enduml

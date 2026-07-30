@@ -75,9 +75,21 @@ public record AgentEvent(
         return new AgentEvent(
             java.util.UUID.randomUUID().toString(),
             patternName,
-            "human",
+            "Human",
             EventType.HUMAN_INPUT_REQUIRED,
             prompt,
+            Map.of("requestId", requestId),
+            Instant.now()
+        );
+    }
+
+    public static AgentEvent humanInputReceived(String patternName, String requestId, String message) {
+        return new AgentEvent(
+            java.util.UUID.randomUUID().toString(),
+            patternName,
+            "Human",
+            EventType.HUMAN_INPUT_RECEIVED,
+            message,
             Map.of("requestId", requestId),
             Instant.now()
         );

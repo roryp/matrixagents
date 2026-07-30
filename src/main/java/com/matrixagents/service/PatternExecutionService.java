@@ -20,6 +20,7 @@ import jakarta.inject.Named;
 import jakarta.annotation.PreDestroy;
 
 import com.matrixagents.agents.ConditionalAgents;
+import com.matrixagents.agents.DebateAgents;
 import com.matrixagents.agents.GOAPAgents.AttractionFinder;
 import com.matrixagents.agents.GOAPAgents.CityParser;
 import com.matrixagents.agents.GOAPAgents.DistanceCalculator;
@@ -35,6 +36,7 @@ import com.matrixagents.agents.P2PAgents.ScorerAgent;
 import com.matrixagents.agents.P2PAgents.ValidationAgent;
 import com.matrixagents.agents.ParallelAgents.EveningPlan;
 import com.matrixagents.agents.ParallelAgents.EveningPlannerAgent;
+import com.matrixagents.agents.ParallelMapperAgents;
 import com.matrixagents.agents.SequenceAgents;
 import com.matrixagents.agents.SequenceAgents.AudienceEditor;
 import com.matrixagents.agents.SupervisorAgents.BankTool;
@@ -42,6 +44,7 @@ import com.matrixagents.agents.SupervisorAgents.CreditAgent;
 import com.matrixagents.agents.SupervisorAgents.ExchangeAgent;
 import com.matrixagents.agents.SupervisorAgents.ExchangeTool;
 import com.matrixagents.agents.SupervisorAgents.WithdrawAgent;
+import com.matrixagents.agents.VotingAgents;
 import com.matrixagents.model.AgentEvent;
 import com.matrixagents.model.ExecutionResult;
 
@@ -50,13 +53,17 @@ import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.agentic.scope.ResultWithAgenticScope;
 import dev.langchain4j.agentic.supervisor.SupervisorAgent;
 import dev.langchain4j.agentic.supervisor.SupervisorResponseStrategy;
+import dev.langchain4j.agentic.patterns.debate.ConvergenceStrategy;
+import dev.langchain4j.agentic.patterns.debate.DebatePlanner;
 import dev.langchain4j.agentic.patterns.goap.GoalOrientedPlanner;
 import dev.langchain4j.agentic.patterns.p2p.P2PPlanner;
+import dev.langchain4j.agentic.patterns.voting.VotingPlanner;
+import dev.langchain4j.agentic.patterns.voting.VotingStrategy;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 
 /**
- * Service that executes the 8 LangChain4j agentic patterns.
+ * Service that executes the 11 LangChain4j agentic patterns.
  * Uses the langchain4j-agentic module with proper AgenticServices.
  * Each pattern demonstrates a different workflow orchestration strategy.
  */
@@ -109,12 +116,15 @@ public class PatternExecutionService {
             return switch (patternId) {
                 case "sequence" -> executeSequence(prompt);
                 case "parallel" -> executeParallel(prompt);
+                case "parallel-mapper" -> executeParallelMapper(prompt);
                 case "loop" -> executeLoop(prompt);
                 case "conditional" -> executeConditional(prompt);
                 case "supervisor" -> executeSupervisor(prompt);
                 case "human-in-loop" -> executeHumanInLoop(prompt);
                 case "goap" -> executeGOAP(prompt);
                 case "p2p" -> executeP2P(prompt);
+                case "debate" -> executeDebate(prompt);
+                case "voting" -> executeVoting(prompt);
                 default -> throw new IllegalArgumentException("Unknown pattern: " + patternId);
             };
         }, executor);
@@ -249,6 +259,75 @@ public class PatternExecutionService {
         } catch (Exception e) {
             events.add(publishEvent(AgentEvent.error("parallel", null, e.getMessage())));
             return ExecutionResult.error(executionId, "parallel", e.getMessage(), events, startTime);
+        }
+    }
+
+    /**
+     * PARALLEL MAPPER PATTERN: fan a single agent out over a collection.
+     */
+    private ExecutionResult executeParallelMapper(String prompt) {
+        String executionId = UUID.randomUUID().toString();
+        Instant startTime = Instant.now();
+        List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
+
+        try {
+            events.add(publishEvent(AgentEvent.started("parallel-mapper", "Starting map-reduce workflow using AgenticServices.parallelMapperBuilder(): fanning one analyzer out over a batch of reviews")));
+
+            List<String> reviews = new ArrayList<>();
+            for (String part : prompt.split("\\r?\\n|;|\\|")) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    reviews.add(trimmed);
+                }
+            }
+            if (reviews.isEmpty()) {
+                reviews.add(prompt.trim());
+            }
+
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "parallel-mapper", events);
+            events.add(publishEvent(AgentEvent.stateUpdated("parallel-mapper", "reviewCount", String.valueOf(reviews.size()))));
+
+            ParallelMapperAgents.ReviewAnalyzer analyzer = AgenticServices
+                    .agentBuilder(ParallelMapperAgents.ReviewAnalyzer.class)
+                    .chatModel(chatModel)
+                    .outputKey("analysis")
+                    .build();
+
+            UntypedAgent batchAnalyzer = AgenticServices.parallelMapperBuilder()
+                    .subAgents(analyzer)
+                    .itemsProvider("reviews")
+                    .outputKey("analyses")
+                    .executor(executor)
+                    .listener(listener)
+                    .build();
+
+            events.add(publishEvent(AgentEvent.agentInvoked("parallel-mapper", "parallelMapper", "Mapping ReviewAnalyzer over " + reviews.size() + " reviews concurrently...")));
+
+            Object raw = batchAnalyzer.invoke(Map.of("reviews", reviews));
+            List<Object> analyses = (raw instanceof List<?> list)
+                    ? new ArrayList<>(list)
+                    : new ArrayList<>(List.of(String.valueOf(raw)));
+
+            StringBuilder report = new StringBuilder("## Batch Review Analysis (" + reviews.size() + " reviews)\n\n");
+            for (int i = 0; i < reviews.size(); i++) {
+                String analysis = i < analyses.size() ? String.valueOf(analyses.get(i)) : "(no analysis)";
+                report.append("**").append(i + 1).append(".** _\"").append(truncate(reviews.get(i))).append("\"_\n\n");
+                report.append("-> ").append(analysis.trim()).append("\n\n");
+            }
+            String finalReport = report.toString();
+
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
+            scope.put("reviews", reviews);
+            scope.put("analyses", analyses);
+
+            events.add(publishEvent(AgentEvent.agentCompleted("parallel-mapper", "parallelMapper", analyses.size() + " analyses aggregated")));
+            events.add(publishEvent(AgentEvent.completed("parallel-mapper", finalReport)));
+            return ExecutionResult.success(executionId, "parallel-mapper", finalReport, events, scope, startTime);
+
+        } catch (Exception e) {
+            log.error("Parallel mapper execution failed", e);
+            events.add(publishEvent(AgentEvent.error("parallel-mapper", null, e.getMessage())));
+            return ExecutionResult.error(executionId, "parallel-mapper", e.getMessage(), events, startTime);
         }
     }
 
@@ -508,26 +587,31 @@ public class PatternExecutionService {
                     .chatModel(chatModel)
                     .build();
             
-            events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "zodiacExtractor", "Checking for zodiac sign...")));
+            events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "ZodiacExtractor", "Checking for zodiac sign...")));
             String extractedSign = extractor.extract(prompt).trim();
-            events.add(publishEvent(AgentEvent.agentCompleted("human-in-loop", "zodiacExtractor", "Found: " + extractedSign)));
+            events.add(publishEvent(AgentEvent.agentCompleted("human-in-loop", "ZodiacExtractor", "Found: " + extractedSign)));
             
             String zodiacSign;
             if (extractedSign.equalsIgnoreCase("UNKNOWN") || extractedSign.isEmpty()) {
                 // Need human input
                 String requestId = UUID.randomUUID().toString();
                 scope.put("requestId", requestId);
+                CompletableFuture<String> inputFuture = humanInputService.requestInput(requestId,
+                    "Please provide your zodiac sign:");
                 events.add(publishEvent(AgentEvent.humanInputRequired("human-in-loop", 
                         "What is your zodiac sign? (e.g., Aries, Taurus, Gemini...)", requestId)));
 
                 try {
-                    CompletableFuture<String> inputFuture = humanInputService.requestInput(requestId, 
-                            "Please provide your zodiac sign:");
                     zodiacSign = inputFuture.get(120, TimeUnit.SECONDS);
+                    events.add(publishEvent(AgentEvent.humanInputReceived("human-in-loop", requestId,
+                        "Human input received")));
                     events.add(publishEvent(AgentEvent.stateUpdated("human-in-loop", "humanInput", zodiacSign)));
                 } catch (TimeoutException e) {
                     // Default to Aries if timeout
+                    humanInputService.cancelRequest(requestId);
                     zodiacSign = "Aries";
+                    events.add(publishEvent(AgentEvent.humanInputReceived("human-in-loop", requestId,
+                        "Human input timed out; using default")));
                     events.add(publishEvent(AgentEvent.stateUpdated("human-in-loop", "timeout", "Using default: Aries")));
                 }
             } else {
@@ -542,10 +626,10 @@ public class PatternExecutionService {
                     .chatModel(chatModel)
                     .build();
             
-            events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "horoscopeAgent", "Generating horoscope for " + zodiacSign)));
+            events.add(publishEvent(AgentEvent.agentInvoked("human-in-loop", "HoroscopeAgent", "Generating horoscope for " + zodiacSign)));
             String horoscope = horoscopeAgent.generateHoroscope(zodiacSign);
             scope.put("horoscope", horoscope);
-            events.add(publishEvent(AgentEvent.agentCompleted("human-in-loop", "horoscopeAgent", truncate(horoscope))));
+            events.add(publishEvent(AgentEvent.agentCompleted("human-in-loop", "HoroscopeAgent", truncate(horoscope))));
 
             events.add(publishEvent(AgentEvent.completed("human-in-loop", horoscope)));
             return ExecutionResult.success(executionId, "human-in-loop", horoscope, events, scope, startTime);
@@ -760,6 +844,126 @@ public class PatternExecutionService {
             return ExecutionResult.error(executionId, "p2p", e.getMessage(), events, startTime);
         }
     }
+
+        /**
+         * DEBATE PATTERN: adversarial refinement using DebatePlanner.
+         */
+        private ExecutionResult executeDebate(String prompt) {
+        String executionId = UUID.randomUUID().toString();
+        Instant startTime = Instant.now();
+        List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
+
+        try {
+            events.add(publishEvent(AgentEvent.started("debate", "Starting debate workflow using DebatePlanner: debaters argue in parallel rounds, then a judge renders a verdict")));
+
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "debate", events);
+
+            DebateAgents.ProponentDebater proponent = AgenticServices
+                .agentBuilder(DebateAgents.ProponentDebater.class)
+                .chatModel(chatModel).outputKey("proponent").build();
+            DebateAgents.SkepticDebater skeptic = AgenticServices
+                .agentBuilder(DebateAgents.SkepticDebater.class)
+                .chatModel(chatModel).outputKey("skeptic").build();
+            DebateAgents.PragmatistDebater pragmatist = AgenticServices
+                .agentBuilder(DebateAgents.PragmatistDebater.class)
+                .chatModel(chatModel).outputKey("pragmatist").build();
+            DebateAgents.DebateJudge judge = AgenticServices
+                .agentBuilder(DebateAgents.DebateJudge.class)
+                .chatModel(chatModel).outputKey("verdict").build();
+
+            UntypedAgent debatePanel = AgenticServices.plannerBuilder()
+                .subAgents(proponent, skeptic, pragmatist, judge)
+                .outputKey("verdict")
+                .planner(() -> new DebatePlanner(3, ConvergenceStrategy.unanimousLastWord()))
+                .listener(listener)
+                .build();
+
+            events.add(publishEvent(AgentEvent.stateUpdated("debate", "question", truncate(prompt))));
+            events.add(publishEvent(AgentEvent.agentInvoked("debate", "debatePanel", "Opening the debate floor...")));
+
+            ResultWithAgenticScope<String> result = debatePanel.invokeWithAgenticScope(Map.of("question", prompt));
+            String verdict = String.valueOf(result.result());
+
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
+            scope.put("question", prompt);
+            scope.put("verdict", verdict);
+
+            String output = "## Debate Verdict\n\n" + verdict;
+            events.add(publishEvent(AgentEvent.agentCompleted("debate", "Judge", truncate(verdict))));
+            events.add(publishEvent(AgentEvent.completed("debate", output)));
+            return ExecutionResult.success(executionId, "debate", output, events, scope, startTime);
+
+        } catch (Exception e) {
+            log.error("Debate execution failed", e);
+            events.add(publishEvent(AgentEvent.error("debate", null, e.getMessage())));
+            return ExecutionResult.error(executionId, "debate", e.getMessage(), events, startTime);
+        }
+        }
+
+        /**
+         * VOTING PATTERN: ensemble decision using VotingPlanner.
+         */
+        private ExecutionResult executeVoting(String prompt) {
+        String executionId = UUID.randomUUID().toString();
+        Instant startTime = Instant.now();
+        List<AgentEvent> events = Collections.synchronizedList(new ArrayList<>());
+
+        try {
+            events.add(publishEvent(AgentEvent.started("voting", "Starting voting workflow using VotingPlanner: an ensemble of analysts vote in parallel, majority wins")));
+
+            WebSocketAgentListener listener = new WebSocketAgentListener(eventPublisher, "voting", events);
+
+            VotingAgents.GrowthAnalyst growth = AgenticServices
+                .agentBuilder(VotingAgents.GrowthAnalyst.class)
+                .chatModel(chatModel).outputKey("voteGrowth").build();
+            VotingAgents.ValueAnalyst value = AgenticServices
+                .agentBuilder(VotingAgents.ValueAnalyst.class)
+                .chatModel(chatModel).outputKey("voteValue").build();
+            VotingAgents.RiskAnalyst risk = AgenticServices
+                .agentBuilder(VotingAgents.RiskAnalyst.class)
+                .chatModel(chatModel).outputKey("voteRisk").build();
+
+            UntypedAgent votingPanel = AgenticServices.plannerBuilder()
+                .subAgents(growth, value, risk)
+                .outputKey("decision")
+                .planner(() -> new VotingPlanner(VotingStrategy.majority()))
+                .listener(listener)
+                .build();
+
+            events.add(publishEvent(AgentEvent.stateUpdated("voting", "proposal", truncate(prompt))));
+            events.add(publishEvent(AgentEvent.agentInvoked("voting", "votingPanel", "Collecting independent votes from the committee...")));
+
+            ResultWithAgenticScope<String> result = votingPanel.invokeWithAgenticScope(Map.of("proposal", prompt));
+            String decision = String.valueOf(result.result()).trim();
+
+            Map<String, Object> scope = new ConcurrentHashMap<>(listener.getScopeSnapshot());
+            scope.put("proposal", prompt);
+
+            String voteGrowth = String.valueOf(scope.getOrDefault("voteGrowth", "?")).trim();
+            String voteValue = String.valueOf(scope.getOrDefault("voteValue", "?")).trim();
+            String voteRisk = String.valueOf(scope.getOrDefault("voteRisk", "?")).trim();
+            scope.put("decision", decision);
+
+            String output = String.format("""
+            ## Committee Decision: **%s**
+
+            - **Growth Analyst** voted: **%s**
+            - **Value Analyst** voted: **%s**
+            - **Risk Analyst** voted: **%s**
+
+            _Aggregated by majority vote across the committee._
+            """, decision, voteGrowth, voteValue, voteRisk);
+
+            events.add(publishEvent(AgentEvent.agentCompleted("voting", "votingPanel", "Majority decision: " + decision)));
+            events.add(publishEvent(AgentEvent.completed("voting", output)));
+            return ExecutionResult.success(executionId, "voting", output, events, scope, startTime);
+
+        } catch (Exception e) {
+            log.error("Voting execution failed", e);
+            events.add(publishEvent(AgentEvent.error("voting", null, e.getMessage())));
+            return ExecutionResult.error(executionId, "voting", e.getMessage(), events, startTime);
+        }
+        }
 
     // Helper methods
 

@@ -1,14 +1,19 @@
-@startuml sequential
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-sequential
+!include pattern-theme.puml
 
-title Sequential Pattern (Chain)
+title 1. Sequential Workflow\n<size:14>Each agent transforms the shared story in a fixed order</size>
 
-rectangle "Creative\nWriter" as seq1 #LightBlue
-rectangle "Audience\nEditor" as seq2 #LightBlue
-rectangle "Style\nEditor" as seq3 #LightBlue
+left to right direction
 
-seq1 --> seq2 : story
-seq2 --> seq3 : edited story
+rectangle "Request\n<size:11>topic + audience + style</size>" as input #E2E8F0
+rectangle "CreativeWriter\n<size:11>creates story</size>" as writer #DBEAFE
+rectangle "AudienceEditor\n<size:11>adapts for readers</size>" as audience #DBEAFE
+rectangle "StyleEditor\n<size:11>applies final style</size>" as style #DBEAFE
+rectangle "Final Story" as output #DCFCE7
+
+input --> writer : topic
+writer --> audience : story
+audience --> style : story
+style --> output : story
 
 @enduml

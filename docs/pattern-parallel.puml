@@ -1,17 +1,22 @@
-@startuml parallel
-!theme plain
-skinparam backgroundColor #FFFFFF
+@startuml pattern-parallel
+!include pattern-theme.puml
 
-title Parallel Pattern (Fan-out)
+title 2. Parallel Workflow\n<size:14>Independent specialists run concurrently, then their results are combined</size>
 
-rectangle "Input\n(mood)" as par_in #LightGreen
-rectangle "Food\nExpert" as par1 #LightGreen
-rectangle "Movie\nExpert" as par2 #LightGreen
-rectangle "Evening\nPlans" as par_out #LightGreen
+left to right direction
 
-par_in --> par1
-par_in --> par2
-par1 --> par_out
-par2 --> par_out
+rectangle "Request\n<size:11>mood</size>" as input #E2E8F0
+rectangle "Fan-out\n<size:11>parallel start</size>" as start #FEF3C7
+rectangle "FoodExpert\n<size:11>suggests meals</size>" as food #DBEAFE
+rectangle "MovieExpert\n<size:11>recommends films</size>" as movie #DBEAFE
+rectangle "Combiner\n<size:11>pairs results</size>" as combiner #FEF3C7
+rectangle "Evening Plans" as output #DCFCE7
+
+input --> start : mood
+start --> food : mood
+start --> movie : mood
+food --> combiner : meals
+movie --> combiner : movies
+combiner --> output
 
 @enduml

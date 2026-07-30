@@ -1,6 +1,6 @@
 # AI Agents - LangChain4j Agentic Patterns Showcase
 
-A showcase application demonstrating **8 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.
+A showcase application demonstrating **11 agentic patterns** from LangChain4j with real-time visualization using D3.js and WebSocket streaming.
 
 ![AI Agents Screenshot](docs/screenshot.png)
 
@@ -26,7 +26,7 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Features
 
-- **8 Agentic Patterns** with interactive visualizations
+- **11 Agentic Patterns** with interactive visualizations
 - **Real-time WebSocket** streaming of agent events
 - **D3.js** animated topology graphs with agent tooltips (hover to see each agent's role)
 - **Event log** with timestamped agent activities and scope state inspector
@@ -35,13 +35,16 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 
 ## Patterns Demonstrated
 
-<img src="docs/patterns-overview.png" alt="All 8 Agentic Patterns Overview — Sequential, Parallel, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, and P2P" width="800"/>
+<img src="docs/patterns-overview.png" alt="All 11 Agentic Patterns Overview — Sequential, Parallel, Parallel Mapper, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, P2P, Debate, and Voting" width="800"/>
+
+All pattern visualizations are rendered from the matching [PlantUML sources](docs/) so the diagrams stay reviewable alongside the implementation.
 
 ### Workflow Patterns (Deterministic Orchestration)
 | Pattern | Description | Topology |
 |---------|-------------|----------|
 | **Sequential** | Agents invoked one after another in order | Chain |
 | **Parallel** | Multiple agents run simultaneously | Fan-out |
+| **Parallel Mapper** | One concurrent worker instance per collection item | Map-reduce |
 | **Loop** | Iterative refinement until exit condition | Cycle |
 | **Conditional** | Routes to different agents based on conditions | Branch |
 
@@ -56,6 +59,8 @@ A showcase application demonstrating **8 agentic patterns** from LangChain4j wit
 |---------|-------------|----------|
 | **GOAP** | Travelling Salesman via Goal-Oriented Action Planning | DAG |
 | **P2P** | Peer-to-peer decentralized coordination | Mesh |
+| **Debate** | Opposing perspectives refine arguments across rounds | Panel |
+| **Voting** | Independent specialist ballots produce a majority decision | Ensemble |
 
 ## Beginner's Guide to Agentic Patterns
 
@@ -112,7 +117,21 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 ---
 
-#### 3. Loop Workflow (Cycle)
+#### 3. Parallel Mapper (Map-Reduce)
+
+**What it does:** Creates one agent instance per input item, processes the collection concurrently, and returns the results in input order.
+
+**Real-world analogy:** A review team where every analyst applies the same rubric to a different customer review, then the findings are collected into one report.
+
+**When to use:** Large batches of independent items that need the same analysis or transformation.
+
+**Example prompt:** Paste multiple product reviews separated by new lines to classify their sentiment and extract each key point.
+
+<img src="docs/pattern-parallel-mapper.png" alt="Parallel Mapper Pattern — a batch of reviews fans out to one concurrent ReviewAnalyzer worker per item, then ordered analyses are aggregated into a batch report." width="800"/>
+
+---
+
+#### 4. Loop Workflow (Cycle)
 
 **What it does:** Agents iterate and refine until a quality threshold is met.
 
@@ -130,7 +149,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 ---
 
-#### 4. Conditional Routing (Branch)
+#### 5. Conditional Routing (Branch)
 
 **What it does:** Routes to different specialist agents based on the input.
 
@@ -151,7 +170,7 @@ These patterns follow **deterministic rules** - you define exactly how agents in
 
 These patterns use **LLM intelligence** to decide how agents interact.
 
-#### 5. Supervisor Agent (Star)
+#### 6. Supervisor Agent (Star)
 
 **What it does:** A "boss" agent plans and delegates to worker agents.
 
@@ -170,7 +189,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 
 ---
 
-#### 6. Human-in-the-Loop (Gated)
+#### 7. Human-in-the-Loop (Gated)
 
 **What it does:** Pauses execution to get human input or approval.
 
@@ -185,7 +204,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 - Asks human: "What is your zodiac sign?"
 - Uses human's answer to generate personalized horoscope
 
-<img src="docs/pattern-humaninloop.png" alt="Human-in-the-Loop Pattern — zodiac horoscope gated workflow: ZodiacExtractor attempts to extract zodiac sign from input, if UNKNOWN the flow pauses for human input (via WebSocket HUMAN_INPUT_REQUESTED event), human provides their zodiac sign via UI modal, then HoroscopeAgent generates a personalized horoscope." width="800"/>
+<img src="docs/pattern-humaninloop.png" alt="Human-in-the-Loop Pattern — zodiac horoscope gated workflow: ZodiacExtractor attempts to extract a zodiac sign, the flow emits HUMAN_INPUT_REQUIRED and pauses if one is missing, Human responds in the UI modal, then HoroscopeAgent generates a personalized horoscope." width="800"/>
 
 ---
 
@@ -193,7 +212,7 @@ These patterns use **LLM intelligence** to decide how agents interact.
 
 These patterns use **advanced planning algorithms** for complex orchestration.
 
-#### 7. GOAP - Goal-Oriented Action Planning (DAG)
+#### 8. GOAP - Goal-Oriented Action Planning (DAG)
 
 **What it does:** Finds the optimal sequence of agents to reach a goal, like GPS finding the shortest route. The planner builds a dependency graph from each agent's inputs and outputs, then calculates the shortest path from the current state to the goal.
 
@@ -240,7 +259,7 @@ The planner won't execute an agent until all its input keys are present in the `
 
 ---
 
-#### 8. P2P - Peer-to-Peer (Mesh)
+#### 9. P2P - Peer-to-Peer (Mesh)
 
 **What it does:** Agents collaborate as equals, reacting to each other's outputs without a central controller.
 
@@ -260,22 +279,49 @@ The planner won't execute an agent until all its input keys are present in the `
 
 ---
 
+#### 10. Debate (Multi-Round Panel)
+
+**What it does:** Runs opposing debaters in parallel rounds, sharing prior arguments so each can refine its position before a judge synthesizes the final verdict.
+
+**When to use:** Policy analysis, architecture tradeoffs, and decisions where surfacing strong counterarguments matters.
+
+**Example prompt:** *"Should companies adopt a four-day work week?"*
+
+<img src="docs/pattern-debate.png" alt="Debate Pattern — Proponent, Skeptic, and Pragmatist argue in parallel rounds using shared debate context until convergence or round three, then Judge synthesizes the final verdict." width="800"/>
+
+---
+
+#### 11. Voting (Ensemble Decision)
+
+**What it does:** Collects independent categorical ballots in parallel and applies a voting strategy to produce one committee decision.
+
+**When to use:** Decisions that benefit from independent specialist perspectives and a transparent aggregation rule.
+
+**Example prompt:** *"Evaluate an investment in a fast-growing EV startup with heavy debt and no profits."*
+
+<img src="docs/pattern-voting.png" alt="Voting Pattern — GrowthAnalyst, ValueAnalyst, and RiskAnalyst cast independent BUY, HOLD, or SELL ballots that a majority strategy aggregates into one committee decision." width="800"/>
+
+---
+
 ### Choosing the Right Pattern
 
-With 8 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
+With 11 patterns available, picking the right one is the most important design decision. The key is matching the **structure of your problem** to the **coordination style** of the pattern. Ask yourself: Is the task a straightforward pipeline, or does it need dynamic planning? Do agents need to collaborate, or work independently? Is human judgment required?
 
-<img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — mapping situations to the recommended agentic pattern: Sequential for simple pipelines, Parallel for multiple perspectives, Loop for quality-critical tasks, Conditional for varied inputs, Supervisor for complex decomposition, Human-in-the-Loop for approval workflows, GOAP for dependency-heavy planning, and P2P for creative collaboration" width="800"/>
+<img src="docs/pattern-selection-guide.png" alt="Pattern Selection Guide — maps common orchestration situations to all 11 patterns: Sequential, Parallel, Parallel Mapper, Loop, Conditional, Supervisor, Human-in-the-Loop, GOAP, P2P, Debate, and Voting." width="800"/>
 
 | Situation | Recommended Pattern | Why |
 |-----------|---------------------|-----|
 | Simple pipeline with clear steps | **Sequential** | Each step depends on the previous — no branching or parallelism needed |
 | Need multiple perspectives fast | **Parallel** | Fan-out to independent experts, then combine — minimizes latency |
+| Apply one operation to many items | **Parallel Mapper** | Create one worker per item and preserve ordered batch results |
 | Quality is critical, time isn't | **Loop** | Iterative refinement with a critic ensures output meets a quality bar |
 | Different inputs need different handling | **Conditional** | Route to the right specialist based on input classification |
 | Complex task, unclear how to break down | **Supervisor** | Let the LLM decompose the task and delegate dynamically |
 | Need human approval or input | **Human-in-the-Loop** | Gate critical decisions behind human review before proceeding |
 | Many dependencies, need optimal path | **GOAP** | Builds a dependency graph from agent inputs/outputs and finds the shortest execution path |
 | Creative/brainstorming, want collaboration | **P2P** | Agents react to each other as equals — emergent collaboration |
+| Need competing arguments examined | **Debate** | Multi-round adversarial refinement exposes tradeoffs before a judge decides |
+| Need a robust categorical decision | **Voting** | Independent ballots reduce single-agent bias and aggregate transparently |
 
 > **Tip:** Start with the simplest pattern that fits. You can always compose patterns — for example, a Supervisor that delegates to a Loop sub-workflow, or a GOAP plan where individual steps run in Parallel.
 
@@ -285,7 +331,7 @@ With 8 patterns available, picking the right one is the most important design de
 
 ### AgenticScope: Unified State Management
 
-All 8 patterns in this showcase use **LangChain4j's `AgenticServices`** builders with `AgenticScope` for unified state management. The `AgenticScope` provides:
+All 11 patterns in this showcase use **LangChain4j's `AgenticServices`** builders with `AgenticScope` for unified state management. The `AgenticScope` provides:
 
 - **State sharing** between agents via `scope.readState()` / `scope.writeState()`
 - **Output key mapping** via `@Agent(outputKey = "result")` 
@@ -328,12 +374,15 @@ MyWorkflow workflow = AgenticServices.createAgenticSystem(MyWorkflow.class, mode
 |---------|----------|----------|
 | **Sequence** | Programmatic | `AgenticServices.sequenceBuilder()` |
 | **Parallel** | Declarative | `AgenticServices.createAgenticSystem()` with `@Parallel` |
+| **Parallel Mapper** | Programmatic | `AgenticServices.parallelMapperBuilder()` |
 | **Loop** | Programmatic | `AgenticServices.loopBuilder()` |
 | **Conditional** | Programmatic | `AgenticServices.conditionalBuilder()` + `sequenceBuilder()` |
 | **Supervisor** | Programmatic | `AgenticServices.supervisorBuilder()` |
 | **Human-in-Loop** | Programmatic | `AgenticServices.agentBuilder()` |
 | **GOAP** | Programmatic | `AgenticServices.plannerBuilder()` + `GoalOrientedPlanner` |
 | **P2P** | Programmatic | `AgenticServices.plannerBuilder()` + `P2PPlanner` |
+| **Debate** | Programmatic | `AgenticServices.plannerBuilder()` + `DebatePlanner` |
+| **Voting** | Programmatic | `AgenticServices.plannerBuilder()` + `VotingPlanner` |
 
 > **Note:** This showcase intentionally uses both approaches to demonstrate their equivalence. You could rewrite the Parallel pattern using `sequenceBuilder()` + manual parallel execution, or rewrite the Sequence pattern using annotations — the choice is purely stylistic.
 
@@ -406,9 +455,9 @@ String hypothesis = scope.readState("hypothesis", "");
 ### Backend
 - **Java 21** with Virtual Threads
 - **Quarkus 3.30.6** *(this branch)* — or **Spring Boot 4.0.1** on the `main` branch
-- **LangChain4j 1.12.2** (Core)
-- **LangChain4j Agentic 1.12.2-beta22** (Agent framework)
-- **LangChain4j OpenAI Official 1.12.2-beta22** (Azure OpenAI)
+- **LangChain4j 1.18.0** (Core)
+- **LangChain4j Agentic 1.18.0-beta28** (Agent framework)
+- **LangChain4j OpenAI Official 1.14.0-beta24** (Azure OpenAI)
 - **Native Quarkus WebSockets** *(this branch)* — or STOMP over SockJS on `main` branch
 
 ### Frontend
@@ -557,7 +606,10 @@ matrixagents/
 │   │   ├── SupervisorAgents.java
 │   │   ├── HumanInLoopAgents.java
 │   │   ├── GOAPAgents.java
-│   │   └── P2PAgents.java
+│   │   ├── P2PAgents.java
+│   │   ├── ParallelMapperAgents.java
+│   │   ├── DebateAgents.java
+│   │   └── VotingAgents.java
 │   ├── config/
 │   │   └── LangChainConfig.java        # LLM configuration
 │   ├── controller/
@@ -608,7 +660,7 @@ This is a **showcase/demo application**, not a production system. It's designed 
 <details>
 <summary><strong>What's the difference between the `main` and `quarkus` branches?</strong></summary>
 
-Both branches implement the same 8 agentic patterns with identical functionality. The difference is the backend framework:
+Both branches implement the same 11 agentic patterns with equivalent functionality. The difference is the backend framework:
 - **`quarkus`** — Quarkus 3.30.6 with native Quarkus WebSockets
 - **`main`** — Spring Boot 4.0.1 with STOMP/SockJS WebSockets
 
@@ -635,14 +687,14 @@ The application defaults to `gpt-5` for chat and `text-embedding-3-small` for em
 <summary><strong>What's the difference between "Workflow" and "Agentic" patterns?</strong></summary>
 
 - **Workflow patterns** (Sequential, Parallel, Loop, Conditional) are **deterministic** — you define exactly how agents interact in code.
-- **Agentic patterns** (Supervisor, Human-in-the-Loop) are **LLM-driven** — the LLM decides how to orchestrate agents at runtime.
-- **Planning patterns** (GOAP, P2P) use **specialized algorithms** to determine the optimal agent execution plan.
+- **Agentic patterns** (Supervisor, Human-in-the-Loop) use **runtime judgment** — an LLM or person influences the execution path.
+- **Planning patterns** (GOAP, P2P, Debate, Voting) use **specialized algorithms** to coordinate, refine, or aggregate agent work.
 </details>
 
 <details>
 <summary><strong>What is AgenticScope?</strong></summary>
 
-`AgenticScope` is LangChain4j's unified state management system. It provides shared state between agents (`readState`/`writeState`), output key mapping, agent invocation tracking, and real-time event publishing via `AgentListener`. All 8 patterns in this showcase use it.
+`AgenticScope` is LangChain4j's unified state management system. It provides shared state between agents (`readState`/`writeState`), output key mapping, agent invocation tracking, and real-time event publishing via `AgentListener`. All 11 patterns in this showcase use it.
 </details>
 
 <details>
@@ -664,7 +716,7 @@ The `WebSocketAgentListener` implements LangChain4j's `AgentListener` interface.
 <details>
 <summary><strong>How does Human-in-the-Loop work?</strong></summary>
 
-When the Human-in-the-Loop pattern needs human input, it publishes a `HUMAN_INPUT_REQUESTED` WebSocket event with a `requestId`. The frontend displays a modal for the user to respond. The user's input is submitted via `POST /api/human-input/{requestId}`, and the agent workflow resumes.
+When the Human-in-the-Loop pattern needs human input, it publishes a `HUMAN_INPUT_REQUIRED` WebSocket event with a `requestId`. The frontend displays a modal, submits the response through `POST /api/human-input/{requestId}`, and closes the matching modal when `HUMAN_INPUT_RECEIVED` arrives. The agent workflow then resumes.
 </details>
 
 ### Deployment

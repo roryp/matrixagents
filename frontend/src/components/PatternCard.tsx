@@ -2,15 +2,18 @@ import { Link } from 'react-router-dom'
 import { PatternInfo } from '../types'
 import { motion } from 'framer-motion'
 import { getAgentDescription } from '../data/agentDescriptions'
-import { 
-  ArrowRight, 
-  GitBranch, 
-  RotateCcw, 
-  GitMerge, 
-  Users, 
-  UserCheck, 
-  Target, 
-  Network 
+import {
+  ArrowRight,
+  GitBranch,
+  RotateCcw,
+  GitMerge,
+  Users,
+  UserCheck,
+  Target,
+  Network,
+  Split,
+  Scale,
+  Vote
 } from 'lucide-react'
 
 interface PatternCardProps {
@@ -21,12 +24,15 @@ interface PatternCardProps {
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   sequence: ArrowRight,
   parallel: GitBranch,
+  'parallel-mapper': Split,
   loop: RotateCcw,
   conditional: GitMerge,
   supervisor: Users,
   'human-in-loop': UserCheck,
   goap: Target,
   p2p: Network,
+  debate: Scale,
+  voting: Vote,
 }
 
 const categoryColors: Record<string, string> = {
